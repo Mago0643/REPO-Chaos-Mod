@@ -1094,6 +1094,7 @@ namespace ChaosMod
                 realInstance.carObject = GameObject.Instantiate(car_assets.LoadAsset<GameObject>("Killer Joe"), Vector3.zero, Quaternion.identity);
             else
                 realInstance.carObject = PhotonNetwork.Instantiate("Killer Joe", Vector3.zero, Quaternion.identity);
+
             realInstance.car = realInstance.carObject.AddComponent<CrazyCarAIScript>();
             realInstance.car.honk = car_assets.LoadAsset<AudioClip>("car honk");
             realInstance.car.exp_sprites = car_assets.LoadAssetWithSubAssets<Sprite>("spr_realisticexplosion").ToList();

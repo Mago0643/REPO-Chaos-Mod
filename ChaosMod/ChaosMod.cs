@@ -45,7 +45,7 @@ namespace ChaosMod
         internal ConfigEntry<int> ConfigBarColorB;
         internal ConfigEntry<bool> ConfigDizzyness;
         internal ConfigEntry<bool> ConfigFamilyFriendly;
-        internal List<string> Exclude_events = new List<string>();
+        internal Dictionary<string, bool> Exclude_Modifiers = new Dictionary<string, bool>();
 
         internal List<GameObject> PrefabToAddNetwork = new List<GameObject>();
         
@@ -103,7 +103,6 @@ namespace ChaosMod
             {
                 return LevelGenerator.Instance.Generated && !SemiFunc.IsMainMenu() && SemiFunc.RunIsLevel();
             }
-            set { }
         }
 
         float canvasHeight = 0f;
@@ -279,7 +278,7 @@ namespace ChaosMod
                 DebugText.fontSize = 20;
             }
 
-            Exclude_events.Clear();
+            Exclude_Modifiers.Clear();
             Modifiers.Init(mod =>
             {
                 var config = Config.Bind<bool>(Language.GetText("레벨 이벤트"), mod.GetName(), true, new ConfigDescription(mod.description));
@@ -290,11 +289,13 @@ namespace ChaosMod
                 OnEventSettingChanged(config, mod);
             });
 
-            Logger.LogInfo("Adding Prefabs to the pool...");
+            if (IsDebug)
+                Logger.LogInfo("프리팹을 풀에 추가하는 중...");
             foreach (GameObject prefab in PrefabToAddNetwork)
             {
                 NetworkPrefabs.RegisterNetworkPrefab(prefab);
-                Logger.LogMessage($"Added Prefab: {prefab.name}");
+                if (IsDebug)
+                    Logger.LogMessage($"프리팹 추가됨: {prefab.name}");
             }
 
             Logger.LogMessage("Done. '-' here have a clover's face");
@@ -302,16 +303,10 @@ namespace ChaosMod
 
         void OnEventSettingChanged(ConfigEntry<bool> config, Modifier mod)
         {
-            if (config.Value)
-            {
-                if (!Exclude_events.Contains(mod.name))
-                    Exclude_events.Add(mod.name);
-            }
+            if (Exclude_Modifiers.ContainsKey(config.Definition.Key))
+                Exclude_Modifiers[mod.name] = !config.Value;
             else
-            {
-                if (Exclude_events.Contains(mod.name))
-                    Exclude_events.Remove(mod.name);
-            }
+                Exclude_Modifiers.Add(mod.name, !config.Value);
 
             if (IsDebug)
                 Logger.LogInfo($"이벤트 상태 변경: {mod.name} => {config.Value}");
@@ -387,7 +382,7 @@ namespace ChaosMod
 
         // 텍스트가 뭉탱이로 모여있는 리스트
         internal List<TextLerp> texts = new List<TextLerp>();
-        List<EventTimerBar> eventTimerBars = new List<EventTimerBar>();
+        internal List<EventTimerBar> eventTimerBars = new List<EventTimerBar>();
 
         public TextMeshProUGUI MakeText(string text, float time)
         {
@@ -589,7 +584,7 @@ namespace ChaosMod
                     creditTxt.gameObject.SetActive(false);
             }
 
-            barRect.offsetMax = new Vector2(MathUtil.remapToRange(controller.eventTimer, 0f, MaxEventTimer, 0f, -canvasWidth), barRect.offsetMax.y);
+            barRect.offsetMax = new Vector2(SemiFunc.Remap(0f, MaxEventTimer, 0f, -canvasWidth, controller.eventTimer), barRect.offsetMax.y);
 
             if (TextToRemove.Count > 0)
             {

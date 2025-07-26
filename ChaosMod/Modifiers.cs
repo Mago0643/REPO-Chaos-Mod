@@ -88,6 +88,9 @@ namespace ChaosMod
         /// </summary>
         public bool oncePerLevel = false;
 
+        /// <summary>
+        /// 이벤트가 멀티플레이에서만 실행되어야 하는지 여부입니다.
+        /// </summary>
         public bool multiplayerOnly = true;
 
         public ModifierOptions(float chance = 1f, bool oncePerLevel = false, bool multiplayerOnly = false)
@@ -176,9 +179,7 @@ namespace ChaosMod
         /// </summary>
         public virtual void Start()
         {
-            timerSelf = 0f;
-            if (!isOnce)
-                timerSelf = UnityEngine.Random.Range(minTimer, maxTimer);
+            timerSelf = GetTime();
 
             if (ChaosMod.IsDebug)
                 ChaosMod.Logger.LogInfo("새 이벤트: " + name);
@@ -188,6 +189,15 @@ namespace ChaosMod
                 if (!Modifiers.Excludes.Contains(this))
                     Modifiers.Excludes.Add(this);
             }
+        }
+
+        /// <summary>
+        /// 이 이벤트의 시작 시간을 반환합니다.
+        /// </summary>
+        public float GetTime()
+        {
+            if (isOnce) return 0;
+            return UnityEngine.Random.Range(minTimer, maxTimer);
         }
 
         /// <summary>

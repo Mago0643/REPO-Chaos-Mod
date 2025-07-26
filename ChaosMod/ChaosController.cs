@@ -52,6 +52,16 @@ namespace ChaosMod
             ChaosMod.Instance.MakeText(mod.GetName(), mod.timerSelf);
         }
 
+        [PunRPC]
+        void AddTimeToEventRPC(int eventIndex, float time, PhotonMessageInfo info = default)
+        {
+            if (!(eventIndex >= 0 && eventIndex < events.Count)) return;
+
+            events[eventIndex].timerSelf += time;
+            if (ChaosMod.Instance.eventTimerBars[eventIndex] != null)
+                ChaosMod.Instance.eventTimerBars[eventIndex].SetTime(events[eventIndex].timerSelf);
+        }
+
         void RandomEvent()
         {
             if (!SemiFunc.IsMasterClientOrSingleplayer()) return;
@@ -69,8 +79,22 @@ namespace ChaosMod
                     if (!Modifiers.CheckExcludes(tempMod.Instance) &&
                         Random.Range(0f, 1f) <= Mathf.Clamp01(tempMod.Instance.options.chance) &&
                         (tempMod.isOnce || tempMod.timerSelf <= 0f) &&
-                        (!tempMod.Instance.options.multiplayerOnly || GameManager.Multiplayer()))
+                        (!tempMod.Instance.options.multiplayerOnly || GameManager.Multiplayer()) &&
+                        !ChaosMod.Instance.Exclude_Modifiers[tempMod.name])
                     {
+                        if (!tempMod.isOnce)
+                        {
+                            Modifier @event = events.Find(mod => mod.name == tempMod.name && !mod.isOnce && mod.timerSelf > 0f);
+                            if (@event != null)
+                            {
+                                if (GameManager.Multiplayer())
+                                    view.RPC("AddTimeToEventRPC", RpcTarget.All, events.IndexOf(@event), @event.GetTime());
+                                else
+                                    AddTimeToEventRPC(events.IndexOf(@event), @event.GetTime());
+                                return;
+                            }
+                        }
+
                         if (GameManager.Multiplayer())
                             view.RPC("SendEventRPC", RpcTarget.All, modIndex);
                         else
@@ -79,7 +103,7 @@ namespace ChaosMod
                         return;
                     }
                 } catch (System.Exception e) {
-                    ChaosMod.Logger.LogError(e.Message);
+                    ChaosMod.Logger.LogError($"{e.Message}\n{e.StackTrace}");
                 }
                 tries++;
             }
@@ -121,7 +145,7 @@ namespace ChaosMod
             }
             catch (System.Exception e)
             {
-                ChaosMod.Logger.LogError(e.Message);
+                ChaosMod.Logger.LogError($"{e.Message}\n{e.StackTrace}");
             }
         }
 
@@ -183,7 +207,8 @@ namespace ChaosMod
                     if (mod.timerSelf > -10f)
                     {
                         mod.timerSelf = -10f;
-                        OnEventFinished(mod.GetName(), true);
+                        if (!mod.isOnce)
+                            OnEventFinished(mod.GetName(), true);
 
                         bool removeCondition = !mod.isOnce && mod.timerSelf <= 0f;
                         int index = events.IndexOf(mod);
@@ -216,7 +241,7 @@ namespace ChaosMod
                 {
                     if (i >= 0 && i < events.Count)
                     {
-                        if (!events[i].finihshed)
+                        if (!events[i].finihshed && !events[i].isOnce)
                             OnEventFinished(events[i].GetName(), false);
 
                         if (ChaosMod.IsDebug)
