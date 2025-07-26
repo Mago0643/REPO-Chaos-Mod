@@ -69,7 +69,7 @@ namespace ChaosMod
         };
         private bool yapping = false;
         private UnityEvent chat_callback;
-
+            
         void Start()
         {
             agent = GetComponent<NavMeshAgent>();
@@ -107,12 +107,15 @@ namespace ChaosMod
                 ChatManager.instance.PossessChatScheduleEnd();
             });
 
-            int familyfriendly = ChaosMod.Instance.ConfigFamilyFriendly.Value ? 1 : 0;
+            if (GameManager.Multiplayer())
+            {
+                int familyfriendly = ChaosMod.Instance.ConfigFamilyFriendly.Value ? 1 : 0;
 
-            yapping = true;
-            ChatManager.instance.PossessChatScheduleStart(0x7FFFFFFF);
-            ChatManager.instance.PossessChat(ChatManager.PossessChatID.None, startMessages[UnityEngine.Random.Range(0, startMessages.Length), familyfriendly], 4f, Color.red, eventExecutionAfterMessageIsDone: chat_callback);
-            ChatManager.instance.PossessChatScheduleEnd();
+                yapping = true;
+                ChatManager.instance.PossessChatScheduleStart(0x7FFFFFFF);
+                ChatManager.instance.PossessChat(ChatManager.PossessChatID.None, startMessages[UnityEngine.Random.Range(0, startMessages.GetLength(0)), familyfriendly], 4f, Color.red, eventExecutionAfterMessageIsDone: chat_callback);
+                ChatManager.instance.PossessChatScheduleEnd();
+            }
 
             Transform[] shits = GetComponentsInChildren<Transform>();
             foreach (Transform tr in shits)
@@ -143,6 +146,8 @@ namespace ChaosMod
                     exp_rend = tr.GetComponent<SpriteRenderer>();
                 }
             }
+
+            exp_src.outputAudioMixerGroup = src.outputAudioMixerGroup = AudioManager.instance.SoundMasterGroup;
 
             // agent.agentTypeID = -334000983;
             Spawn();
@@ -234,10 +239,11 @@ namespace ChaosMod
 
         void OnDestroy()
         {
+            if (!GameManager.Multiplayer()) return;
             int familyfriendly = ChaosMod.Instance.ConfigFamilyFriendly.Value ? 1 : 0;
 
             ChatManager.instance.PossessChatScheduleStart(0x7FFFFFFF);
-            ChatManager.instance.PossessChat(ChatManager.PossessChatID.None, deadMessages[UnityEngine.Random.Range(0, deadMessages.Length), familyfriendly], 4f, Color.red);
+            ChatManager.instance.PossessChat(ChatManager.PossessChatID.None, deadMessages[UnityEngine.Random.Range(0, deadMessages.GetLength(0)), familyfriendly], 4f, Color.red);
             ChatManager.instance.PossessChatScheduleEnd();
         }
 
@@ -372,6 +378,7 @@ namespace ChaosMod
             bool isHit = Physics.BoxCast(origin, halfExtents, direction, out RaycastHit hit, transform.rotation, maxDistance);
             if (isHit)
             {
+                
                 Transform crashed = GetParentTransformByNameContains(hit.transform, "Player");
                 if (crashed.name.Contains("Player"))
                 {

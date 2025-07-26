@@ -13,41 +13,44 @@ namespace ChaosMod
         public static void Init(Action<Modifier> callback = null)
         {
             Modifier[] modifiers = {
-                // new Modifier("무효",""){isOnce = true},    // 무효
-                //new Tumble(),                              // 넘어지기
-                //new KillAllMonsters(),                     // 모든 몬스터 죽이기
-                //new QuakeFOV(),                            // 넓은 시야각
-                //new GameSpeed(2f, "게임 속도 두배"),
-                //new GameSpeed(0.75f, "게임 속도 -35%"),    
-                //new BrokeAllDoor(),                        // 모든 미닫이문 부수기
-                //new MonsterSound("갓난쟁이", "rugurt", 1), // 갓난쟁이
-                //new MonsterSound("광대", "clown", 1),      // 광대
-                //new MonsterSound("짐승", "animal", 3),     // 짐승
-                //new MonsterSound("오리", "duck", 3),       // 오리
-                //new MonsterSound("사냥꾼", "hunter", 3),   // 사냥꾼
-                //new AddHealth(100),                        // +100 HP
-                //new AddHealth(50),                         // +50 HP
-                //new AddHealth(0),                          // 0 HP
-                //new AddHealth(-25),                        // -25 HP
-                //new HideHealthUI(),                        // 체력 숨기기
-                //new HideSprintUI(),                        // 기력 숨기기
-                //new JointAreDoors(),                       // 모든 서랍 문을 지도에 표시
-                //new DuckMadness(),                         // 축지법 쓰는 오리
-                //new SayRandomThnings(),                    // 무작위 대사 말하기
-                //new ShakeScreen(),                         // 지진
-                //new IncreaseValuableWorth(2f,"귀중품 가격 두배"),
-                //new IncreaseValuableWorth(0.9f,"귀중품 가격 -10%"),
-                //new SpinEternally(),                       // 회전회오리이이이
-                //new FriendlyMonsters(),                    // 친화적인 몬스터
-                //new VoicePitch(1.5f,"높은음 목소리"),      // 목소리 음조절 x1.5
-                //new VoicePitch(0.7f,"낮은음 목소리"),      // 목소리 음조절 x0.7
-                //new DisablePostProcessing(),               // 포스트 프로세싱 비활성화
-                //new InvincibleOrb(),                       // 티타늄 오브
-                //new ReviveAllPlayers(),                    // 죽은 플레이어 소생
-                //new NoJumpAndSprint(),                     // 달리기 & 점프 없음
-                //new EyeBig(),                              // 동공 확장
-                //new DisableLighting(),                     // 전역 조명 비활성화
-                new CarCrash(),                            // 로봇같이 생긴 이상한 방지턱이네
+                new Modifier("무효",""){isOnce = true},    // 무효
+                new Tumble(),                              // 넘어지기
+                new KillAllMonsters(),                     // 모든 몬스터 죽이기
+                new QuakeFOV(),                            // 넓은 시야각
+                new GameSpeed(2f, "게임 속도 두배"),
+                new GameSpeed(0.75f, "게임 속도 -35%"),
+                new BrokeAllDoor(),                        // 모든 미닫이문 부수기
+                new MonsterSound("갓난쟁이", "rugurt", 1), // 갓난쟁이
+                new MonsterSound("광대", "clown", 1),      // 광대
+                new MonsterSound("짐승", "animal", 3),     // 짐승
+                new MonsterSound("오리", "duck", 3),       // 오리
+                new MonsterSound("사냥꾼", "hunter", 3),   // 사냥꾼
+                new AddHealth(100),                        // +100 HP
+                new AddHealth(50),                         // +50 HP
+                new AddHealth(0),                          // 0 HP
+                new AddHealth(-25),                        // -25 HP
+                new HideHealthUI(),                        // 체력 숨기기
+                new HideSprintUI(),                        // 기력 숨기기
+                new JointAreDoors(),                       // 모든 서랍 문을 지도에 표시
+                new DuckMadness(),                         // 축지법 쓰는 오리
+                new SayRandomThnings(),                    // 무작위 대사 말하기
+                new ShakeScreen(),                         // 지진
+                new IncreaseValuableWorth(2f,"귀중품 가격 두배"),
+                new IncreaseValuableWorth(0.9f,"귀중품 가격 -10%"),
+                new SpinEternally(),                       // 회전회오리이이이
+                new FriendlyMonsters(),                    // 친화적인 몬스터
+                new VoicePitch(1.5f,"높은음 목소리"),      // 목소리 음조절 x1.5
+                new VoicePitch(0.7f,"낮은음 목소리"),      // 목소리 음조절 x0.7
+                new DisablePostProcessing(),               // 포스트 프로세싱 비활성화
+                new InvincibleOrb(),                       // 티타늄 오브
+                new ReviveAllPlayers(),                    // 죽은 플레이어 소생
+                new NoJumpAndSprint(),                     // 달리기 & 점프 없음
+                new EyeBig(),                              // 동공 확장
+                new DisableLighting(),                     // 전역 조명 비활성화
+                new CarCrash(),                            // 올해 최고의 운전사
+                new SpawnMonster(2),                       // 몬스터 2마리 소환
+                new SpawnMonster(4),                       // 몬스터 4마리 소환
+                new NoGravity(),                           // 중력 없음
                 // 모든 플레이어가 무적
                 // 모든 몬스터가 무적
                 // CRT

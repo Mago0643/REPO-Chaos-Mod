@@ -15,6 +15,7 @@ using UnityEngine.Rendering.PostProcessing;
 using UnityEngine.TextCore.Text;
 using UnityEngine.UI;
 using System.Collections;
+using REPOLib.Modules;
 
 namespace ChaosMod
 {
@@ -234,7 +235,7 @@ namespace ChaosMod
                 }
             }
 
-            RumbleAS.clip = assets.LoadAsset<AudioClip>("snd_rumble");
+            RumbleAS.clip = assets.LoadAsset<AudioClip>("rumble");
             RumbleAS.Stop();
 
             SceneManager.sceneLoaded += OnSceneChange;
@@ -252,8 +253,6 @@ namespace ChaosMod
             // 크레딧 텍스트
             creditTxt = creditObject.AddComponent<TextMeshProUGUI>();
             creditTxt.font = pretendard;
-            creditTxt.text = $"Chaos Mod v{PluginInfo.Version} by Lego0_77\n\n<color=#FF00FF>Original Mod From ChaosModV</color>";
-            creditTxt.fontSize = 0;//50;
             creditTxt.alignment = TextAlignmentOptions.Center;
             if (IsDebug)
                 creditTxt.text += "\n<size=30>디버그 모드 활성화됨</size>";
@@ -291,19 +290,12 @@ namespace ChaosMod
                 OnEventSettingChanged(config, mod);
             });
 
-            //DefaultPool pool = new DefaultPool();
-            //if (pool != null)
-            //{
-            //    foreach (GameObject prefab in PrefabToAddNetwork)
-            //    {
-            //        if (!pool.ResourceCache.ContainsKey(prefab.name))
-            //            pool.ResourceCache.Add(prefab.name, prefab);
-            //    }
-            //    PrefabToAddNetwork = null;
-            //    if (IsDebug)
-            //        Logger.LogInfo("PhotonNetwork.PrefabPool 초기화 성공");
-            //}
-            //PhotonNetwork.PrefabPool = pool;
+            Logger.LogInfo("Adding Prefabs to the pool...");
+            foreach (GameObject prefab in PrefabToAddNetwork)
+            {
+                NetworkPrefabs.RegisterNetworkPrefab(prefab);
+                Logger.LogMessage($"Added Prefab: {prefab.name}");
+            }
 
             Logger.LogMessage("Done. '-' here have a clover's face");
         }

@@ -24,5 +24,7 @@ namespace ChaosMod
             string pluginDir = System.IO.Path.GetDirectoryName(pluginPath);
             return System.IO.Path.Combine(pluginDir, file);
         }
+
+        // Stolen and Edited from EnemyVision.cs
     }
 }

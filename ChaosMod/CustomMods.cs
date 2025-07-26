@@ -4,9 +4,7 @@ using Photon.Pun;
 using System.Linq;
 using System.Collections;
 using UnityEngine.Rendering;
-using static PhysGrabInCart;
-using UnityEngine.Assertions;
-using System.IO;
+using REPOLib.Modules;
 
 namespace ChaosMod
 {
@@ -29,23 +27,32 @@ namespace ChaosMod
             base.Start();
             if (ChaosMod.IsDebug)
                 ChaosMod.Logger.LogInfo("Spawn " + count + " enemys");
-
             if (!SemiFunc.IsMasterClientOrSingleplayer()) return;
 
-            options.chance -= 10f;
+            var points = GameObject.FindObjectsByType<LevelPoint>(0);
+            foreach (var mod in Modifiers.Events)
+            {
+                if (mod is SpawnMonster && !Modifiers.Excludes.Contains(mod.Instance))
+                    Modifiers.Excludes.Add(mod.Instance);
+            }
 
             int choosen = 0;
-            /*foreach (GameObject monster in monsters)
+            List<EnemySetup> enemies = [
+                ..EnemyDirector.instance.enemiesDifficulty1,
+                ..EnemyDirector.instance.enemiesDifficulty2,
+                ..EnemyDirector.instance.enemiesDifficulty3
+            ];
+
+            foreach (EnemySetup monster in enemies)
             {
                 if (choosen >= count) break;
                 if (Random.Range(0f, 1f) <= 0.6f) continue;
-                if (!monster.TryGetComponent<EnemyParent>(out var sex)) continue;
 
-                SemiFunc.EnemySpawn(sex.GetComponentInChildren<Enemy>());
-                ChaosMod.Logger.LogInfo($"적 스폰됨: {monster.transform.name}");
+                Enemies.SpawnEnemy(monster, points[UnityEngine.Random.Range(0, points.Length)].transform.position, Quaternion.identity);
+                ChaosMod.Logger.LogInfo($"적 스폰됨: {monster.name}");
 
                 choosen += 1;
-            }*/
+            }
         }
 
         public override Modifier Clone()
@@ -1062,7 +1069,7 @@ namespace ChaosMod
     public class CarCrash: Modifier
     {
         public static AssetBundle car_assets;
-        public CarCrash(): base("한문철에 제보하세요!", "잘 가고 있던 보행자를 쳤으니 100대 0입니다!")
+        public CarCrash(): base("올해의 운전사", "반어법입니다.")
         {
             minTimer = 120f;
             maxTimer = 180f;
@@ -1111,6 +1118,22 @@ namespace ChaosMod
         public override Modifier Clone()
         {
             return new CarCrash() { isClone = true, Instance = this };
+        }
+    }
+
+    public class NoGravity: Modifier
+    {
+        public NoGravity(): base("중력 없음", "...")
+        {
+            minTimer = 60f;
+            maxTimer = 120f;
+        }
+
+        public override void Update()
+        {
+            base.Update();
+
+            PlayerController.instance.AntiGravity(0.1f);
         }
     }
 }

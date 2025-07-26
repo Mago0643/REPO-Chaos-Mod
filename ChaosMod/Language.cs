@@ -44,7 +44,8 @@ namespace ChaosMod
                 {"게이지 초록색 차지 비중", "Gauge Color Green"},
                 {"게이지 파란색 차지 비중", "Gauge Color Blue"},
                 {"동공 확장", "Pupil Dilation"},
-                {"로봇같이 생긴 이상한 방지턱이네", "That's a weird bot-shaped bump"}
+                {"올해의 운전사", "Driver of the year"},
+                {"중력 없음", "No Gravity"}
             };
 
             KoreanToEnglish.Clear();
