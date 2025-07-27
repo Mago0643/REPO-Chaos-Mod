@@ -374,7 +374,7 @@ namespace ChaosMod
 
     public class DisablePostProcessing: Modifier
     {
-        public DisablePostProcessing(): base("포스트 프로세싱 비활성화", "화면에 적용된 효과를 제거합니다.")
+        public DisablePostProcessing(): base("화면 효과 비활성화", "화면에 적용된 효과를 제거합니다.")
         {
             minTimer = 30f;
             maxTimer = 60f;
@@ -663,7 +663,7 @@ namespace ChaosMod
                 return;
 
             // ChaosMod.Instance.StartCoroutine(AudioFadeIn());
-            ChaosMod.Instance.RumbleAS.volume = .75f;
+            ChaosMod.Instance.RumbleAS.volume = 1f;
             ChaosMod.Instance.RumbleAS.Play();
         }
 
@@ -696,7 +696,7 @@ namespace ChaosMod
             float step = 0f;
             while (step < 1f)
             {
-                src.volume = ease(step) * .75f;
+                src.volume = ease(step);
                 step += Time.unscaledDeltaTime;
                 yield return new WaitForEndOfFrame();
             }
@@ -712,7 +712,7 @@ namespace ChaosMod
             float step = 0f;
             while (step < 1f)
             {
-                src.volume = ease(step) * .75f;
+                src.volume = ease(step);
                 step += Time.unscaledDeltaTime;
                 yield return new WaitForEndOfFrame();
             }
@@ -1043,10 +1043,16 @@ namespace ChaosMod
             light.ogAmbientMode = RenderSettings.ambientMode;
             light.ogAmbientLight = RenderSettings.ambientLight;
 
+            Instance.options.chance = 0f;
+        }
+
+        public override void Update()
+        {
+            base.Update();
+
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
             RenderSettings.ambientLight = Color.white;
-
-            Instance.options.chance = 0f;
+            RenderSettings.fog = false;
         }
 
         public override void OnFinished()
@@ -1056,6 +1062,7 @@ namespace ChaosMod
             DisableLighting light = (DisableLighting)Instance;
             RenderSettings.ambientMode = light.ogAmbientMode;
             RenderSettings.ambientLight = light.ogAmbientLight;
+            RenderSettings.fog = true;
 
             Instance.options.chance = 1f;
         }
@@ -1124,7 +1131,7 @@ namespace ChaosMod
 
     public class NoGravity: Modifier
     {
-        public NoGravity(): base("중력 없음", "...")
+        public NoGravity(): base("무중력", "...")
         {
             minTimer = 60f;
             maxTimer = 120f;
@@ -1135,6 +1142,11 @@ namespace ChaosMod
             base.Update();
 
             PlayerController.instance.AntiGravity(0.1f);
+        }
+
+        public override Modifier Clone()
+        {
+            return new NoGravity() { isClone = true, Instance = this };
         }
     }
 }

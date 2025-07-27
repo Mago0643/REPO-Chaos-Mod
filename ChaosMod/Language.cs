@@ -31,7 +31,7 @@ namespace ChaosMod
                 {"친화적인 몬스터", "Friendly monsters"},
                 {"높은음 목소리", "High-pitched Voice"},
                 {"낮은음 목소리", "Low-pitched Voice"},
-                {"포스트 프로세싱 비활성화", "Disable Post Processing"},
+                {"화면 효과 비활성화", "Disable Screen Effects"},
                 {"티타늄 오브", "Titanium Orb"},
                 {"죽은 플레이어 소생", "Revive all players"},
                 {"점프 & 달리기 없음", "No Sprint & Jump"},
@@ -45,7 +45,8 @@ namespace ChaosMod
                 {"게이지 파란색 차지 비중", "Gauge Color Blue"},
                 {"동공 확장", "Pupil Dilation"},
                 {"올해의 운전사", "Driver of the year"},
-                {"중력 없음", "No Gravity"}
+                {"무중력", "No Gravity"},
+                {"전체 조명 비활성화", "Disable All Lighting"}
             };
 
             KoreanToEnglish.Clear();

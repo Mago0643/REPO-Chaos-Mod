@@ -1,4 +1,5 @@
 using Photon.Pun;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -135,7 +136,7 @@ namespace ChaosMod
                 ChatManager.instance.PossessChatScheduleEnd();
             });
 
-            if (GameManager.Multiplayer())
+            if (GameManager.Multiplayer() && SemiFunc.IsMasterClient())
             {
                 int familyfriendly = ChaosMod.Instance.ConfigFamilyFriendly.Value ? 1 : 0;
 
@@ -231,7 +232,20 @@ namespace ChaosMod
         void DeathRPC()
         {
             Despawn();
-            needsToDestroy = true;
+            if (SemiFunc.IsMasterClientOrSingleplayer())
+                StartCoroutine(WaitForDestroy());
+        }
+
+        IEnumerator WaitForDestroy()
+        {
+            while (exp_src.isPlaying)
+            {
+                yield return new WaitForEndOfFrame();
+            }
+            if (GameManager.Multiplayer())
+                PhotonNetwork.Destroy(gameObject);
+            else
+                Destroy(gameObject);
         }
 
         public void Death()
@@ -278,7 +292,7 @@ namespace ChaosMod
 
         void OnDestroy()
         {
-            if (!GameManager.Multiplayer()) return;
+            if (!GameManager.Multiplayer() && !SemiFunc.IsMasterClient()) return;
             int familyfriendly = ChaosMod.Instance.ConfigFamilyFriendly.Value ? 1 : 0;
 
             ChatManager.instance.PossessChatScheduleStart(0x7FFFFFFF);
@@ -344,13 +358,6 @@ namespace ChaosMod
                         Hide();
 
                     curAnimFrame = Mathf.Clamp(curAnimFrame + 1, 0, exp_sprites.Count - 1);
-                    if (curAnimFrame >= exp_sprites.Count - 1 && needsToDestroy)
-                    {
-                        if (GameManager.Multiplayer())
-                            PhotonNetwork.Destroy(gameObject);
-                        else
-                            Destroy(gameObject);
-                    }
                 }
             }
 
