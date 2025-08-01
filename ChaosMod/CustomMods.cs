@@ -1076,6 +1076,7 @@ namespace ChaosMod
     public class CarCrash: Modifier
     {
         public static AssetBundle car_assets;
+        public static CarCrash FuckInstance;
         public CarCrash(): base("올해의 운전사", "반어법입니다.")
         {
             minTimer = 120f;
@@ -1085,6 +1086,7 @@ namespace ChaosMod
                 car_assets = AssetBundle.LoadFromFile(Util.GetPluginDirectory("car_assets"));
                 ChaosMod.Instance.PrefabToAddNetwork.Add(car_assets.LoadAsset<GameObject>("Killer Joe"));
             }
+            FuckInstance = this;
         }
 
         public GameObject carObject;
@@ -1095,19 +1097,27 @@ namespace ChaosMod
             base.Start();
             if (!SemiFunc.IsMasterClientOrSingleplayer()) return;
 
-            CarCrash realInstance = (CarCrash)Instance;
+            CarCrash realInstance = FuckInstance;
 
             if (!GameManager.Multiplayer())
-                realInstance.carObject = GameObject.Instantiate(car_assets.LoadAsset<GameObject>("Killer Joe"), Vector3.zero, Quaternion.identity);
-            else
-                realInstance.carObject = PhotonNetwork.Instantiate("Killer Joe", Vector3.zero, Quaternion.identity);
-
-            realInstance.car = realInstance.carObject.AddComponent<CrazyCarAIScript>();
-            realInstance.car.honk = car_assets.LoadAsset<AudioClip>("car honk");
-            realInstance.car.exp_sprites = car_assets.LoadAssetWithSubAssets<Sprite>("spr_realisticexplosion").ToList();
-            foreach (var lp in GameObject.FindObjectsByType<LevelPoint>(0))
             {
-                realInstance.car.waypoints.Add(lp.transform.position);
+                realInstance.carObject = GameObject.Instantiate(car_assets.LoadAsset<GameObject>("Killer Joe"), Vector3.zero, Quaternion.identity);
+                realInstance.car = realInstance.carObject.AddComponent<CrazyCarAIScript>();
+                realInstance.car.honk = car_assets.LoadAsset<AudioClip>("car honk");
+                realInstance.car.exp_sprites = car_assets.LoadAssetWithSubAssets<Sprite>("spr_realisticexplosion").ToList();
+                foreach (var lp in GameObject.FindObjectsByType<LevelPoint>(0))
+                {
+                    realInstance.car.waypoints.Add(lp.transform.position);
+                }
+            }
+            else
+            {
+                realInstance.carObject = PhotonNetwork.Instantiate("Killer Joe", Vector3.zero, Quaternion.identity);
+                ChaosMod.Instance.controller.GetComponent<PhotonView>().RPC("AttachCarScriptRPC", RpcTarget.All);
+                foreach (var lp in GameObject.FindObjectsByType<LevelPoint>(0))
+                {
+                    realInstance.car.waypoints.Add(lp.transform.position);
+                }
             }
 
             Modifiers.Excludes.Add(Instance);

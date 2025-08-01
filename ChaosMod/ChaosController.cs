@@ -14,6 +14,19 @@ namespace ChaosMod
             get => ChaosMod.Instance.DebugText;
         }
 
+        [PunRPC]
+        void AttachCarScriptRPC()
+        {
+            CarCrash realInstance = CarCrash.FuckInstance;
+            ChaosMod.Logger.LogInfo($"Null: {realInstance == null}, Then: {realInstance}");
+            realInstance.car = realInstance.carObject.AddComponent<CrazyCarAIScript>();
+            ChaosMod.Logger.LogInfo($"Car: {realInstance.car}");
+            realInstance.car.honk = CarCrash.car_assets.LoadAsset<AudioClip>("car honk");
+            ChaosMod.Logger.LogInfo($"Car.honk: {realInstance.car.honk}");
+            realInstance.car.exp_sprites = CarCrash.car_assets.LoadAssetWithSubAssets<Sprite>("spr_realisticexplosion").ToList();
+            ChaosMod.Logger.LogInfo($"Car.exp_sprites: {realInstance.car.exp_sprites}");
+        }
+
         void Start()
         {
             view = GetComponent<PhotonView>();

@@ -23,7 +23,7 @@ namespace ChaosMod
     public class ChaosMod : BaseUnityPlugin
     {
         internal static ChaosMod Instance { get; private set; } = null!;
-        public static readonly bool IsDebug = true;
+        public static readonly bool IsDebug = false;
         internal const float MaxEventTimer = 20f;
         internal new static ManualLogSource Logger => Instance._logger;
         private ManualLogSource _logger => base.Logger;

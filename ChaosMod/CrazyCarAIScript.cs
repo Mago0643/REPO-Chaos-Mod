@@ -71,31 +71,6 @@ namespace ChaosMod
         private bool yapping = false;
         private UnityEvent chat_callback;
 
-        [PunRPC]
-        private void AddScriptRPC(int photonID)
-        {
-            PhotonView view = PhotonView.Find(photonID);
-            if (view.gameObject.GetComponent<CrazyCarAIScript>() == null)
-            {
-                var script = view.gameObject.AddComponent<CrazyCarAIScript>();
-                script.exp_sprites = CarCrash.car_assets.LoadAssetWithSubAssets<Sprite>("spr_realisticexplosion").ToList();
-                script.honk = CarCrash.car_assets.LoadAsset<AudioClip>("car honk");
-            }
-        }
-        
-        void Awake()
-        {
-            if (!GameManager.Multiplayer() || !SemiFunc.IsMasterClientOrSingleplayer()) return;
-
-            photonView = GetComponent<PhotonView>();
-            if (photonView == null)
-            {
-                ChaosMod.Logger.LogError("PhotonView가 없습니다.");
-                return;
-            }
-            photonView.RPC("AddScriptRPC", RpcTarget.Others, photonView.ViewID);
-        }
-
         void Start()
         {
             agent = GetComponent<NavMeshAgent>();
@@ -112,14 +87,11 @@ namespace ChaosMod
                 return;
             }
 
+            photonView = GetComponent<PhotonView>();
             if (photonView == null)
             {
-                photonView = GetComponent<PhotonView>();
-                if (photonView == null)
-                {
-                    ChaosMod.Logger.LogError("PhotonView가 없습니다.");
-                    return;
-                }
+                ChaosMod.Logger.LogError("PhotonView가 없습니다.");
+                return;
             }
 
             chat_callback = new UnityEvent();
