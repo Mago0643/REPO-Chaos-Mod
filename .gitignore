@@ -41,3 +41,6 @@ artifacts/
 # Others
 *.DS_Store
 *.Thumbs.db
+
+# 계획 스포일러 방지
+ChaosMod/넣을꺼.txt

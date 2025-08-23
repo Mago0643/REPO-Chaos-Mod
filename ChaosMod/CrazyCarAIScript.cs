@@ -291,7 +291,7 @@ namespace ChaosMod
         [PunRPC]
         void SetDestinationRPC(float x, float y, float z)
         {
-            if (!SemiFunc.IsMasterClientOrSingleplayer())
+            if (SemiFunc.IsMasterClientOrSingleplayer())
                 agent.destination = new Vector3(x, y, z);
             lastYRotation = transform.eulerAngles.y;
         }
