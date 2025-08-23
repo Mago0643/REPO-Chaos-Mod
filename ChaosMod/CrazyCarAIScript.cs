@@ -10,13 +10,13 @@ namespace ChaosMod
 {
     public class CrazyCarAIScript : MonoBehaviour
     {
-        public GameObject MapCustomPrefab;
         public PhotonView photonView;
         public List<Vector3> waypoints = new List<Vector3>();
         public List<Sprite> exp_sprites = new List<Sprite>();
         public float exp_anim_frame = 0.05f;
         public AudioClip honk;
 
+        private MapCustom mapCustom;
         private AudioSource src;
         private AudioSource exp_src;
         private SpriteRenderer exp_rend;
@@ -39,7 +39,7 @@ namespace ChaosMod
         {
             "Wow, great driving.",                                                     // 와, 운전 끝내준다.
             "Nice driving, really.",                                                   // 운전 제대로 한다 진짜..
-            "You're a real pro driver, huh?",                                          // 진짜 프로 운전자시네?
+            "You're a real pro driver?",                                               // 진짜 프로 운전자시네?
             "Wow, did you get your license from a cereal box?",                        // 운전면허를 시리얼 상자에서 뽑았니?
             "10 out of 10 driving skills.",                                            // 운전 점수는 10점 중에 10점이네.
             "Nice driving, genius.",                                                   // 운전 잘하네, 똑똑아.
@@ -52,6 +52,7 @@ namespace ChaosMod
             "That’s supposed to be a human driving? A dog could’ve done a better job.",// 저게 사람이 운전하는 꼬라지라고? 개한테 시켜도 그것보단 잘하겠다.
             "That driver must be the reason for those warning signs.",                 // 교통 표지판은 저 운전자를 위한 거군.
             "YOU DRIVE LIKE YOU'RE PLAYING GRAND THEFT AUTO.",                         // 운전이 GTA 실사판이네?
+            "git gud",
         };
         private string[,] startMessages = new string[,]
         {
@@ -71,51 +72,59 @@ namespace ChaosMod
         private bool yapping = false;
         private UnityEvent chat_callback;
 
-        void Start()
+        void SetupComponents()
         {
-            agent = GetComponent<NavMeshAgent>();
+            if (agent == null)
+                agent = GetComponent<NavMeshAgent>();
             if (agent == null)
             {
                 ChaosMod.Logger.LogError("NavMeshAgent가 없습니다.");
                 return;
             }
 
-            src = GetComponent<AudioSource>();
+            if (src == null)
+                src = GetComponent<AudioSource>();
             if (src == null)
             {
                 ChaosMod.Logger.LogError("AudioSource가 없습니다.");
                 return;
             }
+            src.outputAudioMixerGroup = AudioManager.instance.SoundMasterGroup;
 
-            photonView = GetComponent<PhotonView>();
+            if (photonView == null)
+                photonView = GetComponent<PhotonView>();
             if (photonView == null)
             {
                 ChaosMod.Logger.LogError("PhotonView가 없습니다.");
                 return;
             }
 
-            chat_callback = new UnityEvent();
-            chat_callback.AddListener(() => yapping = false);
-
-            hurt = GetComponent<HurtCollider>();
-            hurt.onImpactPlayer.AddListener(delegate ()
+            if (chat_callback == null)
             {
-                if (!GameManager.Multiplayer() || yapping) return;
+                chat_callback = new UnityEvent();
+                chat_callback.AddListener(() => yapping = false);
+            }
 
-                yapping = true;
-                ChatManager.instance.PossessChatScheduleStart(0x7FFFFFFF);
-                ChatManager.instance.PossessChat(ChatManager.PossessChatID.Ouch, hitMessages[UnityEngine.Random.Range(0, hitMessages.Length)], 4f, Color.red, eventExecutionAfterMessageIsDone: chat_callback);
-                ChatManager.instance.PossessChatScheduleEnd();
-            });
-
-            if (GameManager.Multiplayer() && SemiFunc.IsMasterClient())
+            if (hurt == null)
             {
-                int familyfriendly = ChaosMod.Instance.ConfigFamilyFriendly.Value ? 1 : 0;
+                hurt = GetComponent<HurtCollider>();
+                hurt.onImpactPlayer.AddListener(delegate ()
+                {
+                    if (!GameManager.Multiplayer() || yapping) return;
 
-                yapping = true;
-                ChatManager.instance.PossessChatScheduleStart(0x7FFFFFFF);
-                ChatManager.instance.PossessChat(ChatManager.PossessChatID.None, startMessages[UnityEngine.Random.Range(0, startMessages.GetLength(0)), familyfriendly], 4f, Color.red, eventExecutionAfterMessageIsDone: chat_callback);
-                ChatManager.instance.PossessChatScheduleEnd();
+                    yapping = true;
+                    ChatManager.instance.PossessChatScheduleStart(0x7FFFFFFF);
+                    ChatManager.instance.PossessChat(ChatManager.PossessChatID.Ouch, hitMessages[UnityEngine.Random.Range(0, hitMessages.Length)], 4f, Color.red, eventExecutionAfterMessageIsDone: chat_callback);
+                    ChatManager.instance.PossessChatScheduleEnd();
+                });
+            }
+
+            if (mapCustom == null)
+                mapCustom = GetComponent<MapCustom>();
+            if (mapCustom == null)
+            {
+                ChaosMod.Logger.LogError("MapCustom가 없습니다.");
+                return;
             }
 
             Transform[] shits = GetComponentsInChildren<Transform>();
@@ -144,20 +153,48 @@ namespace ChaosMod
                 else if (tr.name.Contains("Explosion"))
                 {
                     exp_src = tr.GetComponent<AudioSource>();
+                    exp_src.outputAudioMixerGroup = AudioManager.instance.SoundMasterGroup;
                     exp_rend = tr.GetComponent<SpriteRenderer>();
                 }
             }
+        }
 
-            exp_src.outputAudioMixerGroup = src.outputAudioMixerGroup = AudioManager.instance.SoundMasterGroup;
+        void Start()
+        {
+            SetupComponents();
+            if (SemiFunc.IsMasterClientOrSingleplayer())
+            {
+                foreach (var lp in GameObject.FindObjectsByType<LevelPoint>(0))
+                {
+                    waypoints.Add(lp.transform.position);
+                }
+            }
 
             // agent.agentTypeID = -334000983;
-            Spawn();
+            GetComponent<BoxCollider>().enabled = false;
+            hurt.enabled = false;
+            isSpawned = false;
+            agent.isStopped = false;
+            root.gameObject.SetActive(false);
+
+            if (!SemiFunc.IsMasterClientOrSingleplayer())
+                agent.enabled = false;
         }
 
         internal bool isSpawned = false;
         [PunRPC]
         void SpawnRPC()
         {
+            if (GameManager.Multiplayer())
+            {
+                int familyfriendly = ChaosMod.Instance.ConfigFamilyFriendly.Value ? 1 : 0;
+
+                /*yapping = true;
+                ChatManager.instance.PossessChatScheduleStart(0x7FFFFFFF);
+                ChatManager.instance.PossessChat(ChatManager.PossessChatID.None, startMessages[UnityEngine.Random.Range(0, startMessages.GetLength(0)), familyfriendly], 4f, Color.red, eventExecutionAfterMessageIsDone: chat_callback);
+                ChatManager.instance.PossessChatScheduleEnd();*/
+            }
+
             exp_src.Stop();
             playAnimation = false;
             exp_rend.sprite = null;
@@ -168,8 +205,10 @@ namespace ChaosMod
             startEuler = transform.eulerAngles;
             spawnParticles.Play();
             root.gameObject.SetActive(true);
-            agent.isStopped = false;
+            if (!SemiFunc.IsMasterClientOrSingleplayer())
+                agent.isStopped = false;
             GetComponent<BoxCollider>().enabled = true;
+            hurt.enabled = true;
             GoToNextPoint();
         }
 
@@ -183,50 +222,25 @@ namespace ChaosMod
         }
 
         [PunRPC]
-        void DespawnRPC()
+        void DespawnRPC(bool slient = false)
         {
-            exp_src.Play();
-            curAnimTime = 0f;
-            playAnimation = true;
+            if (!slient)
+            {
+                exp_src.Play();
+                curAnimTime = 0f;
+                playAnimation = true;
+            }
+            hurt.enabled = false;
             isSpawned = false;
         }
 
-        public void Despawn()
+        public void Despawn(bool slient = false)
         {
             if (!SemiFunc.IsMasterClientOrSingleplayer()) return;
             if (GameManager.Multiplayer())
-                photonView.RPC("DespawnRPC", RpcTarget.All);
+                photonView.RPC("DespawnRPC", RpcTarget.All, slient);
             else
-                DespawnRPC();
-        }
-
-        [PunRPC]
-        void DeathRPC()
-        {
-            Despawn();
-            if (SemiFunc.IsMasterClientOrSingleplayer())
-                StartCoroutine(WaitForDestroy());
-        }
-
-        IEnumerator WaitForDestroy()
-        {
-            while (exp_src.isPlaying)
-            {
-                yield return new WaitForEndOfFrame();
-            }
-            if (GameManager.Multiplayer())
-                PhotonNetwork.Destroy(gameObject);
-            else
-                Destroy(gameObject);
-        }
-
-        public void Death()
-        {
-            if (!SemiFunc.IsMasterClientOrSingleplayer()) return;
-            if (GameManager.Multiplayer())
-                photonView.RPC("DeathRPC", RpcTarget.All);
-            else
-                DeathRPC();
+                DespawnRPC(slient);
         }
 
         [PunRPC]
@@ -254,11 +268,13 @@ namespace ChaosMod
             if (SemiFunc.IsMasterClientOrSingleplayer())
                 SetDestination(waypoints[UnityEngine.Random.Range(0, waypoints.Count)]);
         }
+
         void Hide()
         {
             src.Stop();
             root.gameObject.SetActive(false);
-            agent.isStopped = true;
+            if (!SemiFunc.IsMasterClientOrSingleplayer())
+                agent.isStopped = true;
             GetComponent<BoxCollider>().enabled = false;
         }
 
@@ -275,7 +291,8 @@ namespace ChaosMod
         [PunRPC]
         void SetDestinationRPC(float x, float y, float z)
         {
-            agent.destination = new Vector3(x, y, z);
+            if (!SemiFunc.IsMasterClientOrSingleplayer())
+                agent.destination = new Vector3(x, y, z);
             lastYRotation = transform.eulerAngles.y;
         }
 
@@ -310,11 +327,14 @@ namespace ChaosMod
                 spawnParticles.transform.eulerAngles = startEuler;
             }
 
-            if (agent.isOnNavMesh && !agent.pathPending && SemiFunc.IsMasterClientOrSingleplayer())
+            if (SemiFunc.IsMasterClientOrSingleplayer())
             {
-                if (agent.remainingDistance < 5f && isSpawned)
+                if (agent.isOnNavMesh && !agent.pathPending)
                 {
-                    GoToNextPoint();
+                    if (agent.remainingDistance < 5f && isSpawned)
+                    {
+                        GoToNextPoint();
+                    }
                 }
             }
 
@@ -332,6 +352,9 @@ namespace ChaosMod
                     curAnimFrame = Mathf.Clamp(curAnimFrame + 1, 0, exp_sprites.Count - 1);
                 }
             }
+
+            if (!isSpawned && mapCustom != null)
+                mapCustom.Hide();
 
             float speedRot = agent.velocity.magnitude * 4f;
             float speedDelta = speedRot - lastAgentSpeed;
@@ -387,7 +410,7 @@ namespace ChaosMod
 
         void FixedUpdate()
         {
-            if (!SemiFunc.IsMasterClientOrSingleplayer()) return;
+            if (!SemiFunc.IsMasterClientOrSingleplayer() || !isSpawned) return;
 
             Vector3 origin = transform.position + (transform.forward * 7.5f) + (Vector3.up * 3f);
             Vector3 halfExtents = new Vector3(1.25f, 1.25f, 0.5f); // 차 앞 범위
@@ -396,7 +419,7 @@ namespace ChaosMod
             bool isHit = Physics.BoxCast(origin, halfExtents, direction, out RaycastHit hit, transform.rotation, maxDistance);
             if (isHit)
             {
-                
+
                 Transform crashed = GetParentTransformByNameContains(hit.transform, "Player");
                 if (crashed.name.Contains("Player"))
                 {

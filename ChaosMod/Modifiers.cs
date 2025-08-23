@@ -47,7 +47,7 @@ namespace ChaosMod
                 new NoJumpAndSprint(),                     // 달리기 & 점프 없음
                 new EyeBig(),                              // 동공 확장
                 new DisableLighting(),                     // 전역 조명 비활성화
-                new CarCrash(),                            // 올해 최고의 운전사
+                new CarCrash(false),                       // 올해 최고의 운전사
                 new SpawnMonster(2),                       // 몬스터 2마리 소환
                 new SpawnMonster(4),                       // 몬스터 4마리 소환
                 new NoGravity(),                           // 중력 없음
@@ -194,7 +194,7 @@ namespace ChaosMod
         /// <summary>
         /// 이 이벤트의 시작 시간을 반환합니다.
         /// </summary>
-        public float GetTime()
+        public virtual float GetTime()
         {
             if (isOnce) return 0;
             return UnityEngine.Random.Range(minTimer, maxTimer);

@@ -1,36 +1,47 @@
 ﻿using Photon.Pun;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
+using static PhysGrabInCart;
 
 namespace ChaosMod
 {
     public class ChaosController: MonoBehaviour
     {
-        PhotonView view;
+        internal PhotonView view;
         TextMeshProUGUI DebugText
         {
             get => ChaosMod.Instance.DebugText;
-        }
-
-        [PunRPC]
-        void AttachCarScriptRPC()
-        {
-            CarCrash realInstance = CarCrash.FuckInstance;
-            ChaosMod.Logger.LogInfo($"Null: {realInstance == null}, Then: {realInstance}");
-            realInstance.car = realInstance.carObject.AddComponent<CrazyCarAIScript>();
-            ChaosMod.Logger.LogInfo($"Car: {realInstance.car}");
-            realInstance.car.honk = CarCrash.car_assets.LoadAsset<AudioClip>("car honk");
-            ChaosMod.Logger.LogInfo($"Car.honk: {realInstance.car.honk}");
-            realInstance.car.exp_sprites = CarCrash.car_assets.LoadAssetWithSubAssets<Sprite>("spr_realisticexplosion").ToList();
-            ChaosMod.Logger.LogInfo($"Car.exp_sprites: {realInstance.car.exp_sprites}");
         }
 
         void Start()
         {
             view = GetComponent<PhotonView>();
             eventTimer = ChaosMod.MaxEventTimer;
+        }
+
+        IEnumerator FindCar()
+        {
+            while (ChaosMod.Instance.carObject == null)
+            {
+                ChaosMod.Instance.carObject = GameObject.Find("Killer Joe(Clone)");
+                yield return null;
+            }
+
+            var car_assets = CarCrash.car_assets;
+            ChaosMod.Instance.car = ChaosMod.Instance.carObject.AddComponent<CrazyCarAIScript>();
+            ChaosMod.Instance.car.honk = car_assets.LoadAsset<AudioClip>("car honk");
+            ChaosMod.Instance.car.exp_sprites = car_assets.LoadAssetWithSubAssets<Sprite>("spr_realisticexplosion").ToList();
+
+            ChaosMod.Logger.LogMessage("Car Setup is done!");
+        }
+
+        [PunRPC]
+        void FindCarRPC()
+        {
+            StartCoroutine(FindCar());
         }
 
         internal List<Modifier> events = new List<Modifier>();
@@ -52,7 +63,7 @@ namespace ChaosMod
         }
 
         [PunRPC]
-        void SendEventRPC(int eventIndex, PhotonMessageInfo info = default)
+        internal void SendEventRPC(int eventIndex, PhotonMessageInfo info = default)
         {
             // if (GameManager.Multiplayer() && !info.Sender.IsMasterClient) return;
             if (!(eventIndex >= 0 && eventIndex < Modifiers.Events.Count)) return;
@@ -197,16 +208,19 @@ namespace ChaosMod
                 return;
             }
 
-            if (eventTimer > 0f)
+            if (!ChaosMod.DISABLE_TIMER)
             {
-                eventTimer = Mathf.Max(0f, eventTimer - (Time.unscaledDeltaTime * timeScale));
-            }
-            else
-            {
-                if (SemiFunc.IsMasterClientOrSingleplayer())
+                if (eventTimer > 0f)
                 {
-                    StartTimer(ChaosMod.MaxEventTimer);
-                    RandomEvent();
+                    eventTimer = Mathf.Max(0f, eventTimer - (Time.unscaledDeltaTime * timeScale));
+                }
+                else
+                {
+                    if (SemiFunc.IsMasterClientOrSingleplayer())
+                    {
+                        StartTimer(ChaosMod.MaxEventTimer);
+                        RandomEvent();
+                    }
                 }
             }
 

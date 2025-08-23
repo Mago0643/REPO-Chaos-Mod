@@ -16,6 +16,7 @@ using UnityEngine.TextCore.Text;
 using UnityEngine.UI;
 using System.Collections;
 using REPOLib.Modules;
+using UnityEngine.Video;
 
 namespace ChaosMod
 {
@@ -23,7 +24,8 @@ namespace ChaosMod
     public class ChaosMod : BaseUnityPlugin
     {
         internal static ChaosMod Instance { get; private set; } = null!;
-        public static readonly bool IsDebug = false;
+        public static readonly bool IsDebug = true;
+        public static readonly bool DISABLE_TIMER = true;
         internal const float MaxEventTimer = 20f;
         internal new static ManualLogSource Logger => Instance._logger;
         private ManualLogSource _logger => base.Logger;
@@ -318,29 +320,28 @@ namespace ChaosMod
             photonViewInited = false;
         }
 
-        //GameObject carObject;
-        //CrazyCarAIScript car;
+        internal GameObject carObject;
+        internal CrazyCarAIScript car;
+
+        internal AdManager adViewer;
+        internal GameObject adObject;
 
         internal bool InitPhotonView()
         {
-            //if (carObject == null)
-            //{
-            //    carObject = Instantiate(assets.LoadAsset<GameObject>("Killer Joe"), Vector3.zero, Quaternion.identity);
-            //    car = carObject.AddComponent<CrazyCarAIScript>();
-            //    car.honk = assets.LoadAsset<AudioClip>("car honk");
-            //    car.exp_sprites = assets.LoadAssetWithSubAssets<Sprite>("spr_realisticexplosion").ToList();
-            //    car.transform.localScale = Vector3.one * 0.125f;
-            //    foreach (var lp in FindObjectsByType<LevelPoint>(0))
-            //    {
-            //        car.waypoints.Add(lp.transform.position);
-            //    }
+            /*if (adObject == null)
+            {
+                adObject = Instantiate(assets.LoadAsset<GameObject>("AD Viewer"), Vector3.zero, Quaternion.identity);
+                adViewer = adObject.AddComponent<AdManager>();
+                adViewer.clips = new List<VideoClip>();
 
-            //    for (int i = 0; i < UnityEngine.AI.NavMesh.GetSettingsCount(); i++)
-            //    {
-            //        var setting = UnityEngine.AI.NavMesh.GetSettingsByIndex(i);
-            //        Logger.LogInfo($"Name: {UnityEngine.AI.NavMesh.GetSettingsNameFromID(i)}, ID: {setting.agentTypeID}");
-            //    }
-            //}
+                int adCount = 3;
+                for (int i = 1; i <= adCount; i++)
+                {
+                    adViewer.clips.Add(assets.LoadAsset<VideoClip>($"ad{i}.mp4"));
+                }
+
+                adObject.transform.SetParent(UICanvas.transform, false);
+            }*/
 
             var NETWORKMAN = GameObject.FindAnyObjectByType<NetworkManager>();
             if (NETWORKMAN == null)
@@ -350,6 +351,7 @@ namespace ChaosMod
             {
                 if (!NETWORKMAN.gameObject.TryGetComponent(out controller))
                     controller = NETWORKMAN.gameObject.AddComponent<ChaosController>();
+
                 if (!GameManager.Multiplayer())
                 {
                     view = null;
@@ -570,6 +572,24 @@ namespace ChaosMod
             if (view == null || controller == null)
             {
                 photonViewInited = InitPhotonView();
+            }
+
+            if (carObject == null)
+            {
+                print($"controller: {controller}");
+                var car_assets = CarCrash.car_assets;
+                if (!GameManager.Multiplayer())
+                {
+                    carObject = Instantiate(car_assets.LoadAsset<GameObject>("Killer Joe"), Vector3.zero, Quaternion.identity);
+                    car = carObject.AddComponent<CrazyCarAIScript>();
+                    car.honk = car_assets.LoadAsset<AudioClip>("car honk");
+                    car.exp_sprites = car_assets.LoadAssetWithSubAssets<Sprite>("spr_realisticexplosion").ToList();
+                }
+                else if (controller != null && controller.view != null && SemiFunc.IsMasterClient())
+                {
+                    carObject = PhotonNetwork.Instantiate("Killer Joe", Vector3.zero, Quaternion.identity);
+                    controller.view.RPC("FindCarRPC", RpcTarget.All);
+                }
             }
 
             if (startTimer < 5f)

@@ -46,7 +46,9 @@ namespace ChaosMod
                 {"동공 확장", "Pupil Dilation"},
                 {"올해의 운전사", "Driver of the year"},
                 {"무중력", "No Gravity"},
-                {"전체 조명 비활성화", "Disable All Lighting"}
+                {"전체 조명 비활성화", "Disable All Lighting"},
+                {"몬스터 2마리 소환", "Spawn 2 monsters"},
+                {"몬스터 4마리 소환", "Spawn 4 monsters"}
             };
 
             KoreanToEnglish.Clear();

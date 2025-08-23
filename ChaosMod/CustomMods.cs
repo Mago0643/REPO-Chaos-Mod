@@ -908,8 +908,6 @@ namespace ChaosMod
         {
             base.Update();
 
-            if (!SemiFunc.IsMasterClientOrSingleplayer()) return;
-
             if (timeShit > 0f)
                 timeShit -= Time.unscaledDeltaTime;
             else
@@ -1069,16 +1067,28 @@ namespace ChaosMod
 
         public override Modifier Clone()
         {
-            return new DisableLighting() { isClone = true, Instance = this };
+            return new DisableLighting();
         }
     }
 
+    // Driving in my car, right after a beer
+    // Hey that bump.. is shaped like a deer?
+    // D U I ?
+    // How about you die?
+    // I'll go hundred miles!!
+    // an hour
+    // Little do you know, i filled up on gas.
+    // Imma get your fountain making ass!
+    // Pulverize this FUCK!!
+    // with MY BERGUNTRUCK!!
+    // It seems like you have no luck.
+    // TRUCK(LUCK)!!
     public class CarCrash: Modifier
     {
         public static AssetBundle car_assets;
-        public static CarCrash FuckInstance;
-        public CarCrash(): base("올해의 운전사", "반어법입니다.")
+        public CarCrash(bool isClone): base("올해의 운전사", "반어법입니다.")
         {
+            this.isClone = isClone;
             minTimer = 120f;
             maxTimer = 180f;
             if (car_assets == null)
@@ -1086,39 +1096,15 @@ namespace ChaosMod
                 car_assets = AssetBundle.LoadFromFile(Util.GetPluginDirectory("car_assets"));
                 ChaosMod.Instance.PrefabToAddNetwork.Add(car_assets.LoadAsset<GameObject>("Killer Joe"));
             }
-            FuckInstance = this;
         }
-
-        public GameObject carObject;
-        public CrazyCarAIScript car;
 
         public override void Start()
         {
             base.Start();
-            if (!SemiFunc.IsMasterClientOrSingleplayer()) return;
 
-            CarCrash realInstance = FuckInstance;
-
-            if (!GameManager.Multiplayer())
-            {
-                realInstance.carObject = GameObject.Instantiate(car_assets.LoadAsset<GameObject>("Killer Joe"), Vector3.zero, Quaternion.identity);
-                realInstance.car = realInstance.carObject.AddComponent<CrazyCarAIScript>();
-                realInstance.car.honk = car_assets.LoadAsset<AudioClip>("car honk");
-                realInstance.car.exp_sprites = car_assets.LoadAssetWithSubAssets<Sprite>("spr_realisticexplosion").ToList();
-                foreach (var lp in GameObject.FindObjectsByType<LevelPoint>(0))
-                {
-                    realInstance.car.waypoints.Add(lp.transform.position);
-                }
-            }
-            else
-            {
-                realInstance.carObject = PhotonNetwork.Instantiate("Killer Joe", Vector3.zero, Quaternion.identity);
-                ChaosMod.Instance.controller.GetComponent<PhotonView>().RPC("AttachCarScriptRPC", RpcTarget.All);
-                foreach (var lp in GameObject.FindObjectsByType<LevelPoint>(0))
-                {
-                    realInstance.car.waypoints.Add(lp.transform.position);
-                }
-            }
+            ChaosMod.Instance.car.transform.position = Vector3.zero;
+            ChaosMod.Instance.car.transform.rotation = Quaternion.identity;
+            ChaosMod.Instance.car.Spawn();
 
             Modifiers.Excludes.Add(Instance);
         }
@@ -1127,15 +1113,13 @@ namespace ChaosMod
         {
             base.OnFinished();
 
-            CarCrash realInstance = (CarCrash)Instance;
-            realInstance.car.Death();
-
+            ChaosMod.Instance.car.Despawn();
             Modifiers.Excludes.Remove(Instance);
         }
 
         public override Modifier Clone()
         {
-            return new CarCrash() { isClone = true, Instance = this };
+            return new CarCrash(true) { isClone = true, Instance = this };
         }
     }
 
@@ -1157,6 +1141,39 @@ namespace ChaosMod
         public override Modifier Clone()
         {
             return new NoGravity() { isClone = true, Instance = this };
+        }
+    }
+
+    public class ShowAD: Modifier
+    {
+        public ShowAD(): base("광고 시청", "개발자도 먹고 살아야죠...")
+        {
+            
+        }
+
+        public override float GetTime()
+        {
+            return ChaosMod.Instance.adViewer.GetLength();
+        }
+
+        public override void Start()
+        {
+            ChaosMod.Instance.adViewer.SetVideo();
+            ChaosMod.Instance.adViewer.Show();
+
+            base.Start();
+        }
+
+        public override void OnFinished()
+        {
+            base.OnFinished();
+
+            ChaosMod.Instance.adViewer.Hide();
+        }
+
+        public override Modifier Clone()
+        {
+            return new ShowAD() { isClone = true, Instance = this };
         }
     }
 }
