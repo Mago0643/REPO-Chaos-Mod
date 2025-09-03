@@ -1,0 +1,50 @@
+#topBox {
+  margin: auto;
+  width: 100%;
+  height: 50lvh;
+  background-color: cornflowerblue;
+}
+
+#header {
+  background-color: cornflowerblue;
+  position: fixed;
+  width: 100%;
+  border-radius: 0px 0px 8px 8px;
+}
+
+.white {
+  color: white !important;
+}
+
+#main-title {
+  text-align: center;
+  padding-top: 17vh;
+  color: white;
+  font-size: 6vh;
+}
+
+#main-subtitle {
+  text-align: center;
+  color: white;
+  font-size: 2vh;
+}
+
+#top-btn-group {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1vh;
+}
+
+#main-btn-src img {
+  transition: all 0.3s ease;
+}
+
+#main-btn-src:hover img {
+  filter: invert(100%)
+}
+
+.material-symbols-outlined {
+  position: relative;
+  top: .5vh;
+}
