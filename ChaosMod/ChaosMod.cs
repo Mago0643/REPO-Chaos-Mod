@@ -4,19 +4,13 @@ using BepInEx.Logging;
 using HarmonyLib;
 using Photon.Pun;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Threading;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Audio;
 using UnityEngine.SceneManagement;
 using UnityEngine.Rendering.PostProcessing;
-using UnityEngine.TextCore.Text;
 using UnityEngine.UI;
-using System.Collections;
 using REPOLib.Modules;
-using UnityEngine.Video;
 
 namespace ChaosMod
 {
@@ -24,8 +18,8 @@ namespace ChaosMod
     public class ChaosMod : BaseUnityPlugin
     {
         internal static ChaosMod Instance { get; private set; } = null!;
-        public static readonly bool IsDebug = true;
-        public static readonly bool DISABLE_TIMER = true;
+        public static readonly bool IsDebug = false;
+        public static readonly bool DISABLE_TIMER = false;
         internal const float MaxEventTimer = 20f;
         internal new static ManualLogSource Logger => Instance._logger;
         private ManualLogSource _logger => base.Logger;
@@ -103,7 +97,8 @@ namespace ChaosMod
         {
             get
             {
-                return LevelGenerator.Instance.Generated && !SemiFunc.IsMainMenu() && SemiFunc.RunIsLevel();
+                // return LevelGenerator.Instance.Generated && !SemiFunc.IsMainMenu() && (SemiFunc.RunIsLevel() || SemiFunc.RunIsShop()) && !SemiFunc.RunIsArena();
+                return LevelGenerator.Instance.Generated && !SemiFunc.IsMainMenu() && SemiFunc.RunIsLevel() && !SemiFunc.RunIsArena();
             }
         }
 
@@ -576,7 +571,6 @@ namespace ChaosMod
 
             if (carObject == null)
             {
-                print($"controller: {controller}");
                 var car_assets = CarCrash.car_assets;
                 if (!GameManager.Multiplayer())
                 {

@@ -1,7 +1,9 @@
 {
   "header_main": "Chaos Mod",
-  "header_download": "Download Mod",
   "header_lang": "Language",
+  "header_home": "Home",
+  "header_about": "About",
+  "header_wiki": "Wiki",
 
   "main_title": "Chaos Mod",
   "main_subtitle": "An %1R.E.P.O.%2 Mod, which inspired on GTAV's %3ChaosModV%2 Mod.",

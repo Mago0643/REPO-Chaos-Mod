@@ -1,14 +1,14 @@
+using ExitGames.Client.Photon;
 using Photon.Pun;
-using System.Collections;
+using Photon.Realtime;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Events;
 
 namespace ChaosMod
 {
-    public class CrazyCarAIScript : MonoBehaviour
+    public class CrazyCarAIScript : MonoBehaviour, IOnEventCallback
     {
         public PhotonView photonView;
         public List<Vector3> waypoints = new List<Vector3>();
@@ -177,8 +177,16 @@ namespace ChaosMod
             agent.isStopped = false;
             root.gameObject.SetActive(false);
 
-            if (!SemiFunc.IsMasterClientOrSingleplayer())
-                agent.enabled = false;
+            agent.enabled = SemiFunc.IsMasterClientOrSingleplayer();
+            if (SemiFunc.IsMultiplayer())
+            {
+                if (PhotonNetwork.IsMasterClient)
+                {
+                    photonView.TransferOwnership(PhotonNetwork.LocalPlayer);
+                }
+            }
+
+            print("agent.enabled: " + agent.enabled + ", Transform View: " + GetComponent<PhotonTransformView>());
         }
 
         internal bool isSpawned = false;
@@ -205,11 +213,12 @@ namespace ChaosMod
             startEuler = transform.eulerAngles;
             spawnParticles.Play();
             root.gameObject.SetActive(true);
-            if (!SemiFunc.IsMasterClientOrSingleplayer())
+            if (SemiFunc.IsMasterClientOrSingleplayer())
                 agent.isStopped = false;
             GetComponent<BoxCollider>().enabled = true;
             hurt.enabled = true;
             GoToNextPoint();
+            PhotonNetwork.AddCallbackTarget(this);
         }
 
         public void Spawn()
@@ -229,7 +238,7 @@ namespace ChaosMod
                 exp_src.Play();
                 curAnimTime = 0f;
                 playAnimation = true;
-            }
+            } else PhotonNetwork.RemoveCallbackTarget(this);
             hurt.enabled = false;
             isSpawned = false;
         }
@@ -273,7 +282,7 @@ namespace ChaosMod
         {
             src.Stop();
             root.gameObject.SetActive(false);
-            if (!SemiFunc.IsMasterClientOrSingleplayer())
+            if (SemiFunc.IsMasterClientOrSingleplayer())
                 agent.isStopped = true;
             GetComponent<BoxCollider>().enabled = false;
         }
@@ -286,6 +295,7 @@ namespace ChaosMod
             ChatManager.instance.PossessChatScheduleStart(0x7FFFFFFF);
             ChatManager.instance.PossessChat(ChatManager.PossessChatID.None, deadMessages[UnityEngine.Random.Range(0, deadMessages.GetLength(0)), familyfriendly], 4f, Color.red);
             ChatManager.instance.PossessChatScheduleEnd();
+            PhotonNetwork.RemoveCallbackTarget(this);
         }
 
         [PunRPC]
@@ -319,6 +329,8 @@ namespace ChaosMod
         {
             if (honkTimer > 0f)
                 honkTimer -= Time.deltaTime;
+            if (exp_rend == null)
+                SetupComponents();
 
             exp_rend.transform.LookAt(Camera.main.transform, Vector3.up);
             if (spawnParticles.isPlaying)
@@ -427,6 +439,17 @@ namespace ChaosMod
                     if (honkTimer <= 0f)
                         Honk();
                 }
+            }
+
+            PhotonNetwork.RaiseEvent(1, agent.transform.position, new RaiseEventOptions { Receivers = ReceiverGroup.Others }, SendOptions.SendUnreliable);
+        }
+
+        private Vector3 targetPos;
+        public void OnEvent(EventData photonEvent)
+        {
+            if (photonEvent.Code == 1)
+            {
+                targetPos = (Vector3)photonEvent.CustomData;
             }
         }
     }

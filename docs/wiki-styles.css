@@ -1,0 +1,35 @@
+body {
+  background: #26363a;
+}
+
+#header {
+  background-color: cornflowerblue;
+  position: fixed;
+  width: 100%;
+  border-radius: 0px 0px 8px 8px;
+  z-index: 100;
+}
+
+.white {
+  color: white !important;
+}
+
+.list-group {
+  width: 15vh;
+  margin-left: 10%;
+  margin-top: 40vh;
+  position: fixed;
+}
+
+#body-text {
+  width: 50%;
+  height: 100vh;
+  margin: auto;
+  border-style: solid;
+  border-radius: 10px;
+  border-color: #11181a;
+  border-width: 5px;
+  background: #1d292c;
+  color: white;
+  padding: 20px;
+}

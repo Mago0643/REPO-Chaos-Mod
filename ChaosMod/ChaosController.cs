@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
-using static PhysGrabInCart;
 
 namespace ChaosMod
 {
@@ -35,7 +34,8 @@ namespace ChaosMod
             ChaosMod.Instance.car.honk = car_assets.LoadAsset<AudioClip>("car honk");
             ChaosMod.Instance.car.exp_sprites = car_assets.LoadAssetWithSubAssets<Sprite>("spr_realisticexplosion").ToList();
 
-            ChaosMod.Logger.LogMessage("Car Setup is done!");
+            if (ChaosMod.IsDebug)
+                ChaosMod.Logger.LogMessage("Car Setup is done!");
         }
 
         [PunRPC]
@@ -66,9 +66,12 @@ namespace ChaosMod
         internal void SendEventRPC(int eventIndex, PhotonMessageInfo info = default)
         {
             // if (GameManager.Multiplayer() && !info.Sender.IsMasterClient) return;
-            if (!(eventIndex >= 0 && eventIndex < Modifiers.Events.Count)) return;
+            var array = Modifiers.Events;
+            if (SemiFunc.RunIsShop())
+                array = Modifiers.ShopEvents;
+            if (!(eventIndex >= 0 && eventIndex < array.Count)) return;
 
-            Modifier template = Modifiers.Events[eventIndex];
+            Modifier template = array[eventIndex];
             Modifier mod = template.Clone();
             events.Add(mod);
             mod.Start();
@@ -97,14 +100,31 @@ namespace ChaosMod
             {
                 try
                 {
-                    int modIndex = Random.Range(0, Modifiers.Events.Count);
-                    Modifier tempMod = Modifiers.Events[modIndex];
+                    int modIndex = 0;
+                    Modifier tempMod = null;
+                    if (SemiFunc.RunIsLevel())
+                    {
+                        modIndex = Random.Range(0, Modifiers.Events.Count);
+                        tempMod = Modifiers.Events[modIndex];
+                    } /*else if (SemiFunc.RunIsShop()) {
+                        modIndex = Random.Range(0, Modifiers.ShopEvents.Count);
+                        tempMod = Modifiers.ShopEvents[modIndex];
+                    }*/
 
-                    if (!Modifiers.CheckExcludes(tempMod.Instance) &&
-                        Random.Range(0f, 1f) <= Mathf.Clamp01(tempMod.Instance.options.chance) &&
-                        (tempMod.isOnce || tempMod.timerSelf <= 0f) &&
-                        (!tempMod.Instance.options.multiplayerOnly || GameManager.Multiplayer()) &&
-                        !ChaosMod.Instance.Exclude_Modifiers[tempMod.name])
+                    bool isExcludedMod = Modifiers.CheckExcludes(tempMod.Instance);
+                    bool chanceChoosen = Random.Range(0f, 1f) <= Mathf.Clamp01(tempMod.Instance.options.chance);
+                    bool hasTimerDoneOrIsOnce = tempMod.isOnce || tempMod.timerSelf <= 0f;
+                    bool isMultiplayerOnly =  tempMod.Instance.options.multiplayerOnly;
+                    bool isSingleplayerOnly = tempMod.Instance.options.singleplayerOnly;
+                    bool excludedOptions = ChaosMod.Instance.Exclude_Modifiers[tempMod.name];
+                    bool type = true;
+                    if ((isMultiplayerOnly && !GameManager.Multiplayer()) || (isSingleplayerOnly && GameManager.Multiplayer()))
+                        type = false;
+
+                    if (ChaosMod.IsDebug)
+                        print($"!isExcludedMod: {!isExcludedMod} && chanceChoosen: {chanceChoosen} && hasTimerDoneOrIsOnce: {hasTimerDoneOrIsOnce} && isMultiplayerOnly: {isMultiplayerOnly} && !excludeOptions: {!excludedOptions}");
+
+                    if (!isExcludedMod && chanceChoosen && hasTimerDoneOrIsOnce && type && !excludedOptions)
                     {
                         if (!tempMod.isOnce)
                         {

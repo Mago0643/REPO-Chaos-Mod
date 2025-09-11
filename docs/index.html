@@ -10,17 +10,24 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=download" />
 </head>
 <body>
+  <!-- Header -->
   <header class="navbar navbar-expand-lg" id="header">
     <div class="container-fluid">
-    <a class="navbar-brand white" href="#" id="header-main">Chaos Mod</a>
+    <a class="navbar-brand white" id="header-main">Chaos Mod</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <!-- <li class="nav-item">
-          <a class="nav-link white" href="https://thunderstore.io/c/repo/p/Lego0_77/ChaosMod" id="header-download">Download Mod</a>
-        </li> -->
+        <li class="nav-item">
+          <a class="nav-link white" href="#" id="header-home" onclick="goToLink('index.html', true)">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link white" href="#" id="header-about">About</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link white" href="#" id="header-wiki" onclick="goToLink('wiki.html', true)">Wiki</a>
+        </li>
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle white" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="header-lang">
             Language
@@ -38,36 +45,39 @@
     </div>
   </header>
 
+  <!-- The Top Box, You can see this firstly when connect to this website. -->
   <div id="topBox">
-    <p id="main-title">Chaos Mod</p>
-    <p id="main-subtitle">
-      An
-      <a href="https://store.steampowered.com/app/3241660/REPO/">R.E.P.O.</a>
-      Mod, which inspired on GTAV's
-      <a href="https://www.gta5-mods.com/scripts/chaos-mod-v">ChaosModV</a>
-      Mod.
-    </p>
-    <div id="top-btn-group">
-      <button class="btn btn-outline-success" id="main-btn-download" onclick="goToLink(`https://thunderstore.io/c/repo/p/Lego0_77/ChaosMod`)">
-        <span class="material-symbols-outlined">download</span>
-        Download Mod
-      </button>
-      <button class="btn btn-outline-dark" id="main-btn-src" onclick="goToLink(`https://github.com/Mago0643/REPO-Chaos-Mod`)">
-        <img width="24" height="24" src="https://raw.githubusercontent.com/rdimascio/icons/refs/heads/master/icons/github.svg">
-        Source Code
-      </button>
+    <div id="box-overlay">
+      <p id="main-title">Chaos Mod</p>
+      <p id="main-subtitle">
+        An
+        <a href="https://store.steampowered.com/app/3241660/REPO/">R.E.P.O.</a>
+        Mod, which inspired on GTAV's
+        <a href="https://www.gta5-mods.com/scripts/chaos-mod-v">ChaosModV</a>
+        Mod.
+      </p>
+      <div id="top-btn-group">
+        <button class="btn btn-outline-success" id="main-btn-download" onclick="goToLink(`https://thunderstore.io/c/repo/p/Lego0_77/ChaosMod`)">
+          <span class="material-symbols-outlined">download</span>
+          Download Mod
+        </button>
+        <button class="btn btn-outline-dark" id="main-btn-src" onclick="goToLink(`https://github.com/Mago0643/REPO-Chaos-Mod`)">
+          <img width="24" height="24" src="https://raw.githubusercontent.com/rdimascio/icons/refs/heads/master/icons/github.svg">
+          Source Code
+        </button>
+      </div>
+      <div style="height: 200lvh"></div>
     </div>
-    <div style="height: 200lvh"></div>
   </div>
 
   <script src="utils.js"></script>
   <script>
-    const DEBUG = true;
+    const DEBUG = false;
 
     let elapsed = 0;
     let timeBefore = Date.now();
     let deltaTime = 0;
-    let langData = { header_main: "Chaos Mod" };
+    let langData = { header_main: "Chaos Mod", header_lang: "", main_title: "", main_subtitle: "", main_btn_download: "", main_btn_src: "" };
     function onDraw() {
       deltaTime = (Date.now() - timeBefore) / 1000;
       timeBefore = Date.now();
@@ -87,22 +97,34 @@
       window.location.href = window.location.pathname + "?lang=" + lang;
     }
 
+    const lang = formatLang(getLang());
+    fetch(`${lang}.json`).then(res => res.json())
+    .then(data => {
+      langData = data;
+      if (DEBUG) {
+        console.dir(langData);
+      }
+      updateLangUI();
+    });
+
     $(this).ready(function()
     {
-      const lang = formatLang(getLang());
-      fetch(`${lang}.json`).then(res => res.json())
-      .then(data => {
-        langData = data;
-        if (DEBUG) {
-          console.dir(langData);
+      window.addEventListener('scroll', () => {
+        const header = $('#header');
+        const scrollPos = window.scrollY;
+
+        // 50lvh
+        if (scrollPos > window.innerHeight * 0.5) {
+          header.addClass('solid');
+        } else {
+          header.removeClass('solid');
         }
-        updateLangUI();
-      });
+      })
     })
 
     function updateLangUI() {
       const data = langData;
-      const IDs = ['header-main', 'header-lang', 'main-title', 'main-subtitle', 'main-btn-download', 'main-btn-src'];
+      const IDs = ['header-main', 'header-lang', 'header-home', 'header-about', 'header-wiki', 'main-title', 'main-subtitle', 'main-btn-download', 'main-btn-src'];
       IDs.forEach(str => {
         switch (str) {
           case 'main-subtitle':
@@ -125,8 +147,12 @@
       });
     }
 
-    function goToLink(link) {
-      window.location.href = link;
+    function goToLink(link, param) {
+      let postfix = "";
+      if (param) {
+        postfix = `?lang=${getLang()}`;
+      }
+      window.location.href = link + postfix;
     }
   </script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>

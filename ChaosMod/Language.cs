@@ -16,7 +16,7 @@ namespace ChaosMod
                 {"넘어지기", "Tumble"},
                 {"모든 몬스터 죽이기", "Kill all monsters"},
                 {"넓은 시야각", "Wide FOV"},
-                {"게임 속도 x2", "Game Speed x2"},
+                {"게임 속도 두배", "Double Game Speed"},
                 {"모든 미닫이문 부수기", "Break All Hinges"},
                 {"환청", "Auditory Hallucination"},
                 {"체력 숨기기", "Hide Health"},
@@ -45,10 +45,11 @@ namespace ChaosMod
                 {"게이지 파란색 차지 비중", "Gauge Color Blue"},
                 {"동공 확장", "Pupil Dilation"},
                 {"올해의 운전사", "Driver of the year"},
-                {"무중력", "No Gravity"},
                 {"전체 조명 비활성화", "Disable All Lighting"},
                 {"몬스터 2마리 소환", "Spawn 2 monsters"},
-                {"몬스터 4마리 소환", "Spawn 4 monsters"}
+                {"몬스터 4마리 소환", "Spawn 4 monsters"},
+                {"달 중력", "Moon Gravity"},
+                {"게임 속도 -35%", "-35% Game Speed"}
             };
 
             KoreanToEnglish.Clear();

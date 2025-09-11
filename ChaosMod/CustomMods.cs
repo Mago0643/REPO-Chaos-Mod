@@ -1089,6 +1089,7 @@ namespace ChaosMod
         public CarCrash(bool isClone): base("올해의 운전사", "반어법입니다.")
         {
             this.isClone = isClone;
+            options.singleplayerOnly = true;
             minTimer = 120f;
             maxTimer = 180f;
             if (car_assets == null)
@@ -1125,7 +1126,7 @@ namespace ChaosMod
 
     public class NoGravity: Modifier
     {
-        public NoGravity(): base("무중력", "...")
+        public NoGravity(): base("달 중력", "...")
         {
             minTimer = 60f;
             maxTimer = 120f;

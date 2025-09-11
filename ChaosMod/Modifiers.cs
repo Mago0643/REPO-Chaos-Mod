@@ -9,10 +9,11 @@ namespace ChaosMod
     public class Modifiers
     {
         public static readonly List<Modifier> Events = new List<Modifier>();
+        public static readonly List<Modifier> ShopEvents = new List<Modifier>();
 
         public static void Init(Action<Modifier> callback = null)
         {
-            Modifier[] modifiers = {
+            List<Modifier> modifiers = new List<Modifier>() {
                 new Modifier("무효",""){isOnce = true},    // 무효
                 new Tumble(),                              // 넘어지기
                 new KillAllMonsters(),                     // 모든 몬스터 죽이기
@@ -63,6 +64,23 @@ namespace ChaosMod
                     callback(mod);
                 Events.Add(mod);
             }
+
+            //List<Modifier> ShopMods = new List<Modifier>() {
+            //    new Shop_DiscountEvent(),
+            //    new Modifier("무효",""){isOnce=true},
+            //    new EyeBig(),
+            //    new DisableLighting(),
+            //    new NoGravity(),
+            //    new ReviveAllPlayers(),
+            //    new DisablePostProcessing()
+            //};
+
+            //foreach (Modifier mod in ShopMods)
+            //{
+            //    if (callback != null && modifiers.Find(m => m.name == mod.name) == null)
+            //        callback(mod);
+            //    ShopEvents.Add(mod);
+            //}
         }
 
         public static readonly List<Modifier> Excludes = new List<Modifier>();
@@ -91,13 +109,19 @@ namespace ChaosMod
         /// <summary>
         /// 이벤트가 멀티플레이에서만 실행되어야 하는지 여부입니다.
         /// </summary>
-        public bool multiplayerOnly = true;
+        public bool multiplayerOnly = false;
 
-        public ModifierOptions(float chance = 1f, bool oncePerLevel = false, bool multiplayerOnly = false)
+        /// <summary>
+        /// 이벤트가 싱글플레이에서만 실행되어야 하는지 여부입니다.
+        /// </summary>
+        public bool singleplayerOnly = false;
+
+        public ModifierOptions(float chance = 1f, bool oncePerLevel = false, bool multiplayerOnly = false, bool singleplayerOnly = false)
         {
             this.chance = Mathf.Clamp01(chance);
             this.oncePerLevel = oncePerLevel;
             this.multiplayerOnly = multiplayerOnly;
+            this.singleplayerOnly = singleplayerOnly;
         }
     }
 
@@ -156,14 +180,7 @@ namespace ChaosMod
         /// <summary>
         /// 이 이벤트가 실행 중인지 여부입니다.
         /// </summary>
-        public bool isRunning
-        {
-            set { }
-            get
-            {
-                return timerSelf > 0f;
-            }
-        }
+        public bool isRunning { get => timerSelf > 0f; }
 
         public Modifier(string name, string description)
         {
@@ -241,7 +258,7 @@ namespace ChaosMod
             Instance.maxTimer = maxTimer;
             Instance.minTimer = minTimer;
             Instance.timerSelf = timerSelf;
-            Instance.options = new ModifierOptions(options.chance, options.oncePerLevel);
+            Instance.options = new ModifierOptions(options.chance, options.oncePerLevel, options.multiplayerOnly, options.singleplayerOnly);
             Instance.isClone = true;
             Instance.Instance = this;
             return Instance;
