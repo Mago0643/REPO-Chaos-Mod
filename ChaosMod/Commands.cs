@@ -110,4 +110,23 @@ public static class Commands
         }
         else ChaosMod.Logger.LogError("evtIndex is Null!");*/
     }
+
+    [CommandExecution(
+        "Flashback",
+        "Scout TF2 Flashbacks you!",
+        enabledByDefault: true,
+        requiresDeveloperMode: true
+    )]
+    [CommandAlias("thinkfast")]
+    [CommandAlias("tf")]
+    [CommandAlias("fb"), CommandAlias("flashback")]
+    public static void ThinkFastNuts(string args)
+    {
+        if (!ChaosMod.IsDebug) return;
+        int evtIndex = Modifiers.Events.IndexOf(Modifiers.Events.Find(mod => mod is ThinkFast));
+        if (evtIndex != -1) {
+            cont.view.RPC("SendEventRPC", Photon.Pun.RpcTarget.All, evtIndex);
+        }
+        else ChaosMod.Logger.LogError("evtIndex is Null!");
+    }
 }

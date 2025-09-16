@@ -21,29 +21,6 @@ namespace ChaosMod
             eventTimer = ChaosMod.MaxEventTimer;
         }
 
-        IEnumerator FindCar()
-        {
-            while (ChaosMod.Instance.carObject == null)
-            {
-                ChaosMod.Instance.carObject = GameObject.Find("Killer Joe(Clone)");
-                yield return null;
-            }
-
-            var car_assets = CarCrash.car_assets;
-            ChaosMod.Instance.car = ChaosMod.Instance.carObject.AddComponent<CrazyCarAIScript>();
-            ChaosMod.Instance.car.honk = car_assets.LoadAsset<AudioClip>("car honk");
-            ChaosMod.Instance.car.exp_sprites = car_assets.LoadAssetWithSubAssets<Sprite>("spr_realisticexplosion").ToList();
-
-            if (ChaosMod.IsDebug)
-                ChaosMod.Logger.LogMessage("Car Setup is done!");
-        }
-
-        [PunRPC]
-        void FindCarRPC()
-        {
-            StartCoroutine(FindCar());
-        }
-
         internal List<Modifier> events = new List<Modifier>();
         internal float eventTimer;
         internal float timeScale = 1f;
@@ -301,5 +278,49 @@ namespace ChaosMod
                 ChaosMod.Instance.EventToRemove.Clear();
             }
         }
-    }
-}
+
+        // -- Custom Mod Thingie --
+        IEnumerator FindCar()
+        {
+            while (ChaosMod.Instance.carObject == null)
+            {
+                ChaosMod.Instance.carObject = GameObject.Find("Killer Joe(Clone)");
+                yield return null;
+            }
+
+            var car_assets = CarCrash.car_assets;
+            ChaosMod.Instance.car = ChaosMod.Instance.carObject.AddComponent<CrazyCarAIScript>();
+            ChaosMod.Instance.car.honk = car_assets.LoadAsset<AudioClip>("car honk");
+            ChaosMod.Instance.car.exp_sprites = car_assets.LoadAssetWithSubAssets<Sprite>("spr_realisticexplosion").ToList();
+
+            if (ChaosMod.IsDebug)
+                ChaosMod.Logger.LogMessage("Car Setup is done!");
+        }
+
+        [PunRPC]
+        void FindCarRPC()
+        {
+            StartCoroutine(FindCar());
+        }
+
+        public void FartOnPlayer(PlayerAvatar avatar)
+        {
+            if (GameManager.Multiplayer())
+                view.RPC("FartPlayerRPC", RpcTarget.All, avatar.photonView.ViewID);
+            else {
+
+            }
+        }
+
+        [PunRPC]
+        void FartPlayerRPC(int viewID)
+        {
+            var plr = PhotonView.Find(viewID).GetComponent<PlayerAvatar>();
+            var chat = Util.GetInternalVar<PlayerVoiceChat>(plr, "voiceChat");
+            var source = Util.GetInternalVar<AudioSource>(chat, "audioSource");
+
+            // source.PlayOneShot();
+            
+        }
+    } // public class ChaosController: MonoBehaviour
+} // namespace ChaosMod

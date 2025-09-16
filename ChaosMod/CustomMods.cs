@@ -5,6 +5,7 @@ using System.Linq;
 using System.Collections;
 using UnityEngine.Rendering;
 using REPOLib.Modules;
+using UnityEngine.UI;
 
 namespace ChaosMod
 {
@@ -1175,6 +1176,103 @@ namespace ChaosMod
         public override Modifier Clone()
         {
             return new ShowAD() { isClone = true, Instance = this };
+        }
+    }
+
+    public class Fart: Modifier
+    {
+        public Fart(): base("우클릭 방귀", "드러워...")
+        {
+            minTimer = 20f;
+            maxTimer = 40f;
+        }
+
+        public override Modifier Clone()
+        {
+            return new Fart() { Instance = this, isClone = true };
+        }
+
+        private float timer = 2f;
+        public override void Update()
+        {
+            base.Update();
+
+            if (timer > 0) {
+                timer -= Time.unscaledDeltaTime;
+            } else {
+                if (Input.GetMouseButtonDown(1)) {
+                    timer = 2f;
+
+                }
+            }
+        }
+    }
+
+    public class ThinkFast : Modifier
+    {
+        public static Image flash;
+        public static Image scout;
+
+        public static GameObject text1;
+        public static GameObject text2;
+
+        public ThinkFast(): base("THINK FAST CHUCKLENUTS!", "으악")
+        {
+            isOnce = true;
+            options.oncePerLevel = true;
+        }
+
+        public override void Start()
+        {
+            base.Start();
+
+            ChaosMod.Instance.StartCoroutine(Flashback());
+        }
+
+        IEnumerator Flashback()
+        {
+            var inst = ChaosMod.Instance;
+            AudioClip voice = inst.assets.LoadAsset<AudioClip>("Scout_stunballhit15");
+            AudioClip flashback = inst.assets.LoadAsset<AudioClip>("flashbang");
+
+            // THINK FAST CHUCKLENUTS!!
+            inst.AudioSource.PlayOneShot(voice);
+
+            text1.SetActive(true);
+            scout.gameObject.SetActive(true);
+            yield return new WaitForSecondsRealtime(0.578f);
+
+            text2.SetActive(true);
+            yield return new WaitForSecondsRealtime(0.667f);
+
+            // flashback
+            text1.SetActive(false);
+            text2.SetActive(false);
+            inst.AudioSource.PlayOneShot(flashback);
+            scout.gameObject.SetActive(false);
+            
+            PlayerAvatar.instance.tumble.TumbleSet(true, false);
+            PlayerAvatar.instance.tumble.TumbleOverrideTime(2f);
+
+            System.Func<float, float> easeInExpo = t => Mathf.Pow(2f, 10f * t - 10f);
+            float time = 0f;
+            while (time < flashback.length)
+            {
+                float alpha = time / flashback.length;
+
+                Color col = flash.color;
+                col.a = 1f - easeInExpo(alpha);
+                flash.color = col;
+
+                time += Time.unscaledDeltaTime;
+                yield return null;
+            }
+            flash.color = new Color(1,1,1,0);
+        }
+
+        public override Modifier Clone()
+        {
+            return new ThinkFast() { Instance = this, isClone = true };
         }
     }
 }

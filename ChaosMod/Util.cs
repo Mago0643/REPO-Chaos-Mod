@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
+using UnityEngine;
 
 namespace ChaosMod
 {
@@ -25,6 +26,12 @@ namespace ChaosMod
             return System.IO.Path.Combine(pluginDir, file);
         }
 
-        // Stolen and Edited from EnemyVision.cs
+        public static void RectTransformFullscreen(RectTransform rt)
+        {
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+        }
     }
 }

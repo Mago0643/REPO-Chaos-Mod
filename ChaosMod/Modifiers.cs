@@ -52,6 +52,7 @@ namespace ChaosMod
                 new SpawnMonster(2),                       // 몬스터 2마리 소환
                 new SpawnMonster(4),                       // 몬스터 4마리 소환
                 new NoGravity(),                           // 중력 없음
+                new ThinkFast(),                           // think fast ---
                 // 모든 플레이어가 무적
                 // 모든 몬스터가 무적
                 // CRT

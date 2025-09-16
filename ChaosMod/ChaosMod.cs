@@ -18,8 +18,8 @@ namespace ChaosMod
     public class ChaosMod : BaseUnityPlugin
     {
         internal static ChaosMod Instance { get; private set; } = null!;
-        public static readonly bool IsDebug = false;
-        public static readonly bool DISABLE_TIMER = false;
+        public static readonly bool IsDebug = true;
+        public static readonly bool DISABLE_TIMER = true;
         internal const float MaxEventTimer = 20f;
         internal new static ManualLogSource Logger => Instance._logger;
         private ManualLogSource _logger => base.Logger;
@@ -32,6 +32,7 @@ namespace ChaosMod
 
         internal AudioSource EnemyAS;
         internal AudioSource RumbleAS;
+        internal AudioSource AudioSource;
 
         internal PostProcessVolume shaderOverlay;
 
@@ -153,6 +154,13 @@ namespace ChaosMod
             RumbleAS.loop = true;
             RumbleAS.playOnAwake = false;
             RumbleAS.outputAudioMixerGroup = AudioManager.instance.SoundMasterGroup;
+
+            GameObject srcObj = new GameObject("Master Sound Source");
+            srcObj.transform.parent = yoinky.transform;
+            AudioSource = srcObj.AddComponent<AudioSource>();
+            AudioSource.dopplerLevel = 0f;
+            AudioSource.playOnAwake = false;
+            AudioSource.outputAudioMixerGroup = AudioManager.instance.SoundMasterGroup;
             
             var reverb = spinky.AddComponent<AudioReverbFilter>();
             reverb.reverbPreset = AudioReverbPreset.Concerthall;
@@ -165,17 +173,46 @@ namespace ChaosMod
             canvasWidth = ((RectTransform)canvas.transform).rect.width;
             DontDestroyOnLoad(canvas);
 
+            GameObject scoutTF2 = new GameObject("Scout TF2");
+            scoutTF2.transform.parent = canvas.transform;
+            Util.RectTransformFullscreen(scoutTF2.AddComponent<RectTransform>());
+            ThinkFast.scout = scoutTF2.AddComponent<Image>();
+
+            GameObject Text1Obj = new GameObject("Top Text");
+            var uhoh = Text1Obj.AddComponent<RectTransform>();
+            Text1Obj.transform.parent = canvas.transform;
+            Image img1 = Text1Obj.AddComponent<Image>();
+            ThinkFast.text1 = img1.gameObject;
+            Text1Obj.SetActive(false);
+            
+            uhoh.pivot = new Vector2(.5f, 1f);
+            uhoh.localScale = new Vector2(674, 94.5f);
+            uhoh.localPosition = new Vector2(0f, -20f);
+
+            GameObject Text2Obj = new GameObject("Top Text");
+            var uhoh2 = Text2Obj.AddComponent<RectTransform>();
+            Text2Obj.transform.parent = canvas.transform;
+            Image img2 = Text2Obj.AddComponent<Image>();
+            ThinkFast.text2 = img2.gameObject;
+            Text2Obj.SetActive(false);
+
+            uhoh2.pivot = new Vector2(.5f, 0f);
+            uhoh2.localScale = new Vector2(856, 94.5f);
+            uhoh2.position = new Vector2(0f, 20f);
+
+            GameObject flashObj = new GameObject("Flash Sprite");
+            flashObj.transform.parent = canvas.transform;
+            Util.RectTransformFullscreen(flashObj.AddComponent<RectTransform>());
+            ThinkFast.flash = flashObj.AddComponent<Image>();
+            ThinkFast.flash.color = new Color(1f, 1f, 1f, 0f);
+
             // 타임 바 만들기
             timeBar = new GameObject("Time Bar");
             timeBar.transform.parent = canvas.transform;
             timeBar.SetActive(false);
             
             // 크기가 부모 전체를 꽉 채우도록 설정
-            RectTransform lord = timeBar.AddComponent<RectTransform>();
-            lord.anchorMin = Vector2.zero;
-            lord.anchorMax = Vector2.one;
-            lord.offsetMin = Vector2.zero;
-            lord.offsetMax = Vector2.zero;
+            Util.RectTransformFullscreen(timeBar.AddComponent<RectTransform>());
 
             GameObject timeBarBG = new GameObject("BG");
             timeBarBG.transform.parent = timeBar.transform;
@@ -237,6 +274,9 @@ namespace ChaosMod
             SceneManager.sceneLoaded += OnSceneChange;
             photonViewInited = false;
 
+            ThinkFast.scout.sprite = assets.LoadAsset<Sprite>("scout tf2");
+            scoutTF2.SetActive(false);
+
             GameObject creditObject = new GameObject("Credit Text");
             creditObject.transform.parent = canvas.transform;
             RectTransform rt = creditObject.AddComponent<RectTransform>();
@@ -296,7 +336,7 @@ namespace ChaosMod
             }
 
             Logger.LogMessage("Done. '-' here have a clover's face");
-        }
+        } // void Start()
 
         void OnEventSettingChanged(ConfigEntry<bool> config, Modifier mod)
         {
