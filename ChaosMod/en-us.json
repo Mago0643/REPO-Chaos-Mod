@@ -26,7 +26,7 @@
   "evt_spawn_monsters_desc": "The game looks so peacefull, so i spawned some monsters.",
   "evt_tumble": "Tumble",
   "evt_tumble_desc": "Watch your foot!",
-  "evt_game_speed": "Game Speed x%s",
+  "evt_game_speed": "Game Speed %fx",
   "evt_game_speed_desc": "Do I REALLY need to explan this...",
   "evt_kill_all_monsters": "Kill all monsters",
   "evt_kill_all_monsters_desc": "Honestly, they are too strong. How dare they do that.",
@@ -51,7 +51,7 @@
   "evt_say_random_thing_desc": "Multiplayer only.",
   "evt_earthquake": "Earthquake",
   "evt_earthquake_desc": "The world is ending...",
-  "evt_increase_valuable": "Valuables Price x%s",
+  "evt_increase_valuable": "Valuables Price %fx",
   "evt_increase_valuable_desc": "Increases or Decreases all valuable's price.",
   "evt_spin": "SPINNNNN",
   "evt_spin_desc": "Monster spinning.",
@@ -77,8 +77,8 @@
   "evt_think_fast_desc": "WHAT",
   "evt_club_mood": "Club Mood",
   "evt_club_mood_desc": "Woo-hoo! /(^o^)/",
-  "evt_gravity_mult": "Gravity x%f",
+  "evt_gravity_mult": "Gravity %fx",
   "evt_gravity_mult_desc": "It's fun to mess with gravity.",
-  "evt_timer_mult": "Timer speed x%f",
+  "evt_timer_mult": "Timer speed %fx",
   "evt_timer_mult_desc": "Let's make it more chaos."
 }
