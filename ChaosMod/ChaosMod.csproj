@@ -9,8 +9,14 @@
     <Version>1.1.0</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EnableGameReferences>true</EnableGameReferences>
-	<!-- IMPORTANT: Change this to your REPO directory. -->
-    <GameDirectory>G:\SteamLibrary\steamapps\common\REPO\</GameDirectory>
+	  
+	<!--==================================================-->
+	<!--=                                                =-->
+	<!--= IMPORTANT: Change this to your REPO directory. =-->
+	<!--=                                                =-->
+	<!--==================================================-->
+    <GameDirectory>H:\SteamLibrary\steamapps\common\REPO\</GameDirectory>
+
     <GaleProfileName>Default</GaleProfileName>
   </PropertyGroup>
 
@@ -32,68 +38,57 @@
     
     <PackageReference Include="BepInEx.Core" Version="5.*" ExcludeAssets="runtime" />
     <PackageReference Include="UnityEngine.Modules" Version="2022.3.21" IncludeAssets="compile" PrivateAssets="all" />
+    <PackageReference Include="Zehs.REPOLib" Version="3.0.3" />
   </ItemGroup>
   <ItemGroup>
 	 <!-- My SSD is gone. this means i lost 100GB+ of my projects. -->
 	 <!-- Good thing i put this project in another drive. -->
-    <Reference Include="MenuLib">
-      <HintPath>G:\SteamLibrary\steamapps\common\REPO\BepInEx\plugins\nickklmao-MenuLib-2.5.0\MenuLib.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Photon3Unity3D">
-      <HintPath>G:\SteamLibrary\steamapps\common\REPO\REPO_Data\Managed\Photon3Unity3D.dll</HintPath>
+      <HintPath>$(GameDirectory)REPO_Data\Managed\Photon3Unity3D.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="PhotonChat">
-      <HintPath>G:\SteamLibrary\steamapps\common\REPO\REPO_Data\Managed\PhotonChat.dll</HintPath>
+      <HintPath>$(GameDirectory)REPO_Data\Managed\PhotonChat.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="PhotonRealtime">
-      <HintPath>G:\SteamLibrary\steamapps\common\REPO\REPO_Data\Managed\PhotonRealtime.dll</HintPath>
+      <HintPath>$(GameDirectory)REPO_Data\Managed\PhotonRealtime.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="PhotonUnityNetworking">
-      <HintPath>G:\SteamLibrary\steamapps\common\REPO\REPO_Data\Managed\PhotonUnityNetworking.dll</HintPath>
+      <HintPath>$(GameDirectory)REPO_Data\Managed\PhotonUnityNetworking.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="PhotonUnityNetworking.Utilities">
-      <HintPath>G:\SteamLibrary\steamapps\common\REPO\REPO_Data\Managed\PhotonUnityNetworking.Utilities.dll</HintPath>
+      <HintPath>$(GameDirectory)REPO_Data\Managed\PhotonUnityNetworking.Utilities.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="PhotonVoice">
-      <HintPath>G:\SteamLibrary\steamapps\common\REPO\REPO_Data\Managed\PhotonVoice.dll</HintPath>
+      <HintPath>$(GameDirectory)REPO_Data\Managed\PhotonVoice.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="PhotonVoice.API">
-      <HintPath>G:\SteamLibrary\steamapps\common\REPO\REPO_Data\Managed\PhotonVoice.API.dll</HintPath>
+      <HintPath>$(GameDirectory)REPO_Data\Managed\PhotonVoice.API.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="PhotonVoice.PUN">
-      <HintPath>G:\SteamLibrary\steamapps\common\REPO\REPO_Data\Managed\PhotonVoice.PUN.dll</HintPath>
+      <HintPath>$(GameDirectory)REPO_Data\Managed\PhotonVoice.PUN.dll</HintPath>
       <Private>False</Private>
-    </Reference>
-    <Reference Include="REPOConfig">
-      <HintPath>G:\SteamLibrary\steamapps\common\REPO\BepInEx\plugins\nickklmao-REPOConfig-1.2.3\REPOConfig.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="REPOLib">
-      <HintPath>G:\SteamLibrary\steamapps\common\REPO\BepInEx\plugins\Zehs-REPOLib-2.1.0\plugins\REPOLib.dll</HintPath>
-	  <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Postprocessing.Runtime">
-      <HintPath>G:\SteamLibrary\steamapps\common\REPO\REPO_Data\Managed\Unity.Postprocessing.Runtime.dll</HintPath>
+      <HintPath>$(GameDirectory)REPO_Data\Managed\Unity.Postprocessing.Runtime.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.TextMeshPro">
-      <HintPath>G:\SteamLibrary\steamapps\common\REPO\REPO_Data\Managed\Unity.TextMeshPro.dll</HintPath>
+      <HintPath>$(GameDirectory)REPO_Data\Managed\Unity.TextMeshPro.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>G:\SteamLibrary\steamapps\common\REPO\REPO_Data\Managed\UnityEngine.dll</HintPath>
+      <HintPath>$(GameDirectory)REPO_Data\Managed\UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>G:\SteamLibrary\steamapps\common\REPO\REPO_Data\Managed\UnityEngine.UI.dll</HintPath>
+      <HintPath>$(GameDirectory)REPO_Data\Managed\UnityEngine.UI.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
@@ -102,6 +97,12 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="car_assets">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="lang\en-us.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="lang\ko.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

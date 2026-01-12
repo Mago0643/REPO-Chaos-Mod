@@ -1,4 +1,4 @@
-﻿using REPOLib.Commands;
+﻿using REPOLib.Modules;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -12,6 +12,10 @@ public static class Commands
     {
         get => ChaosMod.Instance.controller;
     }
+
+    // i think they removed the commands?? i'm not sure why
+    // this will be added again if they restore it
+#if false
 
     [CommandExecution(
         "Revive",
@@ -129,4 +133,24 @@ public static class Commands
         }
         else ChaosMod.Logger.LogError("evtIndex is Null!");
     }
+
+    [CommandExecution(
+        "Force Pause",
+        "Forces show pause menu.",
+        enabledByDefault: true,
+        requiresDeveloperMode: true
+    )]
+    [CommandAlias("fp")]
+    [CommandAlias("pause")]
+    public static void ForcePause(string args)
+    {
+        if (!ChaosMod.IsDebug) return;
+        int evtIndex = Modifiers.Events.IndexOf(Modifiers.Events.Find(mod => mod is ForcePause));
+        if (evtIndex != -1)
+        {
+            cont.view.RPC("SendEventRPC", Photon.Pun.RpcTarget.All, evtIndex);
+        }
+        else ChaosMod.Logger.LogError("evtIndex is Null!");
+    }
+#endif
 }

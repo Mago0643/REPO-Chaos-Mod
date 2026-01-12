@@ -1,10 +1,10 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
-using Photon.Pun;
-using System.Linq;
-using System.Collections;
-using UnityEngine.Rendering;
+﻿using Photon.Pun;
 using REPOLib.Modules;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.UI;
 
 namespace ChaosMod
@@ -14,13 +14,17 @@ namespace ChaosMod
         private string monsterPrefabPath = "enemies";
         private GameObject[] monsters;
         public int count = 1;
-        public SpawnMonster(int count): base("몬스터 스폰", "몬스터를 스폰합니다.")
+        public SpawnMonster(int count): base("evt_spawn_monsters", "evt_spawn_monsters_desc")
         {
             this.count = count;
             isOnce = true;
-            name = $"몬스터 {count}마리 소환";
 
             monsters = Resources.LoadAll<GameObject>(monsterPrefabPath);
+        }
+
+        public override string GetName()
+        {
+            return Language.GetText(name).Replace("%f", count.ToString());
         }
 
         public override void Start()
@@ -64,7 +68,7 @@ namespace ChaosMod
 
     public class Tumble: Modifier
     {
-        public Tumble(): base("넘어지기", "강제로 넘어집니다.")
+        public Tumble(): base("evt_tumble", "evt_tumble_desc")
         {
             isOnce = true;
         }
@@ -92,12 +96,18 @@ namespace ChaosMod
     public class GameSpeed: Modifier
     {
         public float mult = 1f;
-        public GameSpeed(float mult, string name): base("게임 속도", "게임 속도를 늦추거나 빠르게 합니다.")
+        private string cockString = "";
+        public GameSpeed(float mult, string name): base("evt_game_speed", "evt_game_speed_desc")
         {
-            this.name = name;
             minTimer = 20f;
             maxTimer = 25f;
             this.mult = mult;
+            cockString = name;
+        }
+
+        public override string GetName()
+        {
+            return Language.GetText(name).Replace("%s", cockString);
         }
 
         public override void Start()
@@ -127,13 +137,13 @@ namespace ChaosMod
 
         public override Modifier Clone()
         {
-            return new GameSpeed(mult,name) { isClone = true, Instance = this };
+            return new GameSpeed(mult,cockString) { isClone = true, Instance = this };
         }
     }
 
     public class KillAllMonsters: Modifier
     {
-        public KillAllMonsters(): base("모든 몬스터 죽이기", "강제로 모든 몬스터를 죽입니다.")
+        public KillAllMonsters(): base("evt_kill_all_monsters", "evt_kill_all_monsters_desc")
         {
             isOnce = true;
         }
@@ -155,7 +165,7 @@ namespace ChaosMod
 
     public class QuakeFOV: Modifier
     {
-        public QuakeFOV(): base("넓은 시야각", "시야각을 강제로 넓힙니다.")
+        public QuakeFOV(): base("evt_quake_fov", "evt_quake_fov_desc")
         {
             minTimer = 20f;
             maxTimer = 30f;
@@ -175,7 +185,7 @@ namespace ChaosMod
 
     public class BrokeAllDoor: Modifier
     {
-        public BrokeAllDoor(): base("모든 미닫이문 부수기", "모든 출입문, 서랍문 등이 부숴집니다.")
+        public BrokeAllDoor(): base("evt_break_all_door", "evt_break_all_door_desc")
         {
             isOnce = true;
         }
@@ -221,36 +231,24 @@ namespace ChaosMod
 
     public class MonsterSound: Modifier
     {
-        public string aud_name;
-        public string modName;
-        public int length;
         public List<AudioClip> sounds;
 
-        public MonsterSound(string modName, string name, int length): base("환청", "진짜일까요? 아니면 그냥 망상이였을까요?")
+        public MonsterSound(): base("evt_hallucination", "evt_hallucination_desc")
         {
-            aud_name = name;
-            this.length = length;
-            this.modName = modName;
-            this.name = modName;
             isOnce = true;
+
+            // might change this later
             
             sounds = new List<AudioClip>();
-            if (length <= 1)
+            var sound_names = new List<string>() { "duck", "animal", "hunter" };
+            foreach (string name in sound_names)
             {
-                sounds.Add(ChaosMod.Instance.assets.LoadAsset<AudioClip>(name));
-            }
-            else
-            {
-                for (int i = 0; i < length; i++)
-                {
+                for (int i = 1; i <= 3; i++)
                     sounds.Add(ChaosMod.Instance.assets.LoadAsset<AudioClip>($"{name}{i}"));
-                }
             }
-        }
 
-        public override string GetName()
-        {
-            return Language.GetText("환청");
+            sounds.Add(ChaosMod.Instance.assets.LoadAsset<AudioClip>("clown"));
+            sounds.Add(ChaosMod.Instance.assets.LoadAsset<AudioClip>("rugurt"));
         }
 
         public override void Start()
@@ -258,27 +256,29 @@ namespace ChaosMod
             base.Start();
 
             ((MonsterSound)Instance).options.chance -= 0.05f;
-            if (length > 1)
-                ChaosMod.Instance.EnemyAS.PlayOneShot(sounds[Random.Range(1,length)], 0.5f);
-            else
-                ChaosMod.Instance.EnemyAS.PlayOneShot(sounds[0], 0.5f);
+            ChaosMod.Instance.EnemyAS.PlayOneShot(sounds[Random.Range(1, sounds.Count)], 0.5f);
         }
 
         public override Modifier Clone()
         {
-            return new MonsterSound(name, aud_name, length) { isClone = true, Instance = this };
+            return new MonsterSound() { isClone = true, Instance = this };
         }
     }
 
     public class AddHealth: Modifier
     {
         public int amount = 0;
-        public AddHealth(int amount): base("체력 추가", "플레이어를 힐하거나 딜합니다")
+        public AddHealth(int amount): base("체력 추가", "evt_health_desc")
         {
             this.amount = amount;
             name = (amount > 0 ? "+" : "") + $"{amount} HP";
             isOnce = true;
             options.oncePerLevel = true;
+        }
+
+        public override string GetName()
+        {
+            return name;
         }
 
         public override void Start()
@@ -315,7 +315,7 @@ namespace ChaosMod
 
     public class HideHealthUI : Modifier
     {
-        public HideHealthUI(): base("체력 숨기기", "체력 UI를 숨깁니다.")
+        public HideHealthUI(): base("evt_hide_health", "evt_hide_health_desc")
         {
             minTimer = 20f;
             maxTimer = 35f;
@@ -345,7 +345,7 @@ namespace ChaosMod
 
     public class HideSprintUI : Modifier
     {
-        public HideSprintUI() : base("기력 숨기기", "에너지 UI를 숨깁니다.")
+        public HideSprintUI() : base("evt_hide_sprint", "evt_hide_sprint_desc")
         {
             minTimer = 20f;
             maxTimer = 35f;
@@ -375,7 +375,7 @@ namespace ChaosMod
 
     public class DisablePostProcessing: Modifier
     {
-        public DisablePostProcessing(): base("화면 효과 비활성화", "화면에 적용된 효과를 제거합니다.")
+        public DisablePostProcessing(): base("evt_disable_post_processing", "evt_disable_post_processing_desc")
         {
             minTimer = 30f;
             maxTimer = 60f;
@@ -404,7 +404,7 @@ namespace ChaosMod
 
     public class JointAreDoors : Modifier
     {
-        public JointAreDoors(): base("모든 서랍 문을 지도에 표시", "서랍 문, 냉장고 문 등을 지도에 표시합니다.")
+        public JointAreDoors(): base("evt_show_all_drawers_in_map", "evt_show_all_drawers_in_map_desc")
         {
             isOnce = true;
             options.oncePerLevel = true;
@@ -444,7 +444,7 @@ namespace ChaosMod
         private float chanceBefore = 0f;
         private GameObject rubberDuckPrefab;
 
-        public DuckMadness(): base("축지법 쓰는 오리", "고무 오리가 축지법을 씁니다.")
+        public DuckMadness(): base("evt_crazy_ducks", "evt_crazy_ducks_desc")
         {
             minTimer = 25f;
             maxTimer = 30f;
@@ -517,9 +517,9 @@ namespace ChaosMod
                         if (plr == null) continue;
 
                         if (!GameManager.Multiplayer())
-                            plr.ReleaseObject();
+                            plr.ReleaseObject(duck.GetComponent<PhotonView>().ViewID);
                         else
-                            plr.photonView.RPC("ReleaseObjectRPC", RpcTarget.All, false, 0.1f);
+                            plr.photonView.RPC("ReleaseObjectRPC", RpcTarget.All, false, duck.GetComponent<PhotonView>().ViewID, 0.1f);
                     }
             }
         }
@@ -597,7 +597,7 @@ namespace ChaosMod
             "75000 DOLLARS?? OH MY GOSH", "I feel so REPO!", "Tung Tung Tung Tung Tung Tung Tung Tung Tung Sahur",
             "Brr Brr Patapim", "adorable", "I hate everything.", "The cake is a lie.", "This is Certified hood classic.",
             "This is the part where he kills you.", "skill issue", "CHICKEN JOCKEY", "skibidi",
-            "I. AM. STEVE.", "THanks for playing my mod!"
+            "I. AM. STEVE.", "THanks for playing my mod!", "six sevennn"
         };
 
         public static string[] familyfriendly =
@@ -607,10 +607,10 @@ namespace ChaosMod
             "goo goo ga ga?", "I have nothing to say.", "I ran out of ideas.", "I LOOOVEEEE",
             "75000 DOLLARS?? OH MY GOSH", "I feel so REPO!", "Tung Tung Tung Tung Tung Tung Tung Tung Tung Sahur",
             "Brr Brr Patapim", "adorable", "The cake is a lie.", "This is Certified hood classic.",
-            "This is the part where he kills you!", "CHICKEN JOCKEY", "skibidi", "I. AM. STEVE.", "Thanks for playing my mod!"
+            "This is the part where he kills you!", "CHICKEN JOCKEY", "skibidi", "I. AM. STEVE.", "Thanks for playing my mod!",
         };
 
-        public SayRandomThnings(): base("무작위 대사 말하기", "무작위 대사를 말합니다. (멀티플레이어 전용)")
+        public SayRandomThnings(): base("evt_say_random_thing_desc", "evt_say_random_thing_desc")
         {
             isOnce = true;
             options.multiplayerOnly = true;
@@ -646,7 +646,7 @@ namespace ChaosMod
     public class ShakeScreen: Modifier
     {
         // 너무 어지러움 줄여서 너어
-        public ShakeScreen(): base("지진", "강도 5.5의 지진")
+        public ShakeScreen(): base("evt_earthquake", "evt_earthquake_desc")
         {
             minTimer = 15f;
             maxTimer = 20f;
@@ -726,11 +726,16 @@ namespace ChaosMod
     {
         public float mult = 1f;
 
-        public IncreaseValuableWorth(float mult, string name): base("귀중품 가격 상승", "모든 귀중품의 가격을 올리거나 내립니다.")
+        public IncreaseValuableWorth(float mult, string name): base("귀중품 가격", "evt_increase_valuable_desc")
         {
             isOnce = true;
             this.mult = mult;
             this.name = name;
+        }
+
+        public override string GetName()
+        {
+            return Language.GetText("evt_increase_valuable").Replace("%s", Language.GetText(name));
         }
 
         public override Modifier Clone()
@@ -779,7 +784,7 @@ namespace ChaosMod
 
     public class SpinEternally: Modifier
     {
-        public SpinEternally(): base("회전회오리이이이", "몬스터 베이블레이드")
+        public SpinEternally(): base("evt_spin", "evt_spin_desc")
         {
             minTimer = 20f;
             maxTimer = 40f;
@@ -790,27 +795,16 @@ namespace ChaosMod
             return new SpinEternally() { isClone = true, Instance = this };
         }
 
-        private List<EnemyRigidbody> rbList;
-        public override void Start()
-        {
-            base.Start();
-
-            rbList = GameObject.FindObjectsByType<EnemyRigidbody>(0).ToList();
-            // 몬스터 스턴 주기
-            foreach (var rb in rbList)
-            {
-                if (rb == null) continue;
-                rb.enemy.GetComponent<EnemyStateStunned>().Set(timerSelf + 5f);
-            }
-        }
-
         public override void Update()
         {
             base.Update();
 
             // 베이블레이드
-            foreach (var rb in rbList)
+            foreach (var enemy in ChaosMod.Instance.spawnedEnemys)
             {
+                if (enemy == null) continue;
+
+                var rb = enemy.GetComponent<EnemyRigidbody>();
                 if (rb == null) continue;
 
                 var realRB = rb.GetComponent<Rigidbody>();
@@ -822,7 +816,7 @@ namespace ChaosMod
 
     public class FriendlyMonsters: Modifier
     {
-        public FriendlyMonsters(): base("친화적인 몬스터", "몬스터가 공격하지 않습니다.")
+        public FriendlyMonsters(): base("evt_friendly_monsters", "evt_friendly_monsters_desc")
         {
             minTimer = 60f;
             maxTimer = 120f;
@@ -856,7 +850,7 @@ namespace ChaosMod
 
     public class NoJumpAndSprint: Modifier
     {
-        public NoJumpAndSprint(): base("점프 & 달리기 없음", "말 그대로.")
+        public NoJumpAndSprint(): base("evt_no_jump_sprint", "evt_no_jump_sprint_desc")
         {
             minTimer = 20f;
             maxTimer = 40f;
@@ -926,7 +920,7 @@ namespace ChaosMod
 
     public class InvincibleOrb : Modifier
     {
-        public InvincibleOrb() : base("티타늄 오브", "오브가 절대로 깨지지 않습니다.")
+        public InvincibleOrb() : base("evt_titanume_orb", "evt_titanume_orb_desc")
         {
             minTimer = 40f;
             maxTimer = 70f;
@@ -950,7 +944,7 @@ namespace ChaosMod
 
     public class EyeBig: Modifier
     {
-        public EyeBig(): base("동공 확장", "눈이 커집니다.")
+        public EyeBig(): base("evt_big_eyes", "evt_big_eyes_desc")
         {
             minTimer = 30f;
             maxTimer = 42.5f;
@@ -975,7 +969,7 @@ namespace ChaosMod
 
     public class ReviveAllPlayers: Modifier
     {
-        public ReviveAllPlayers(): base("죽은 플레이어 소생", "모든 죽은 플레이어를 살립니다.")
+        public ReviveAllPlayers(): base("evt_revive_all", "evt_revive_all_desc")
         {
             isOnce = true;
         }
@@ -1014,7 +1008,7 @@ namespace ChaosMod
         {
             base.Start();
 
-            
+            // 어찌해야 하오...
         }
 
         public override Modifier Clone()
@@ -1025,7 +1019,7 @@ namespace ChaosMod
 
     public class DisableLighting: Modifier
     {
-        public DisableLighting(): base("전역 조명 비활성화", "게임 내 전체 조명 효과를 비활성화 합니다.")
+        public DisableLighting(): base("evt_disable_all_lights", "evt_disable_all_lights_desc")
         {
             minTimer = 20f;
             maxTimer = 40f;
@@ -1080,14 +1074,14 @@ namespace ChaosMod
     // an hour
     // Little do you know, i filled up on gas.
     // Imma get your fountain making ass!
-    // Pulverize this FUCK!!
+    // Pulverize this ----!!
     // with MY BERGUNTRUCK!!
     // It seems like you have no luck.
     // TRUCK(LUCK)!!
     public class CarCrash: Modifier
     {
         public static AssetBundle car_assets;
-        public CarCrash(bool isClone): base("올해의 운전사", "반어법입니다.")
+        public CarCrash(bool isClone): base("evt_driver_of_the_year", "evt_driver_of_the_year_desc")
         {
             this.isClone = isClone;
             options.singleplayerOnly = true;
@@ -1127,7 +1121,7 @@ namespace ChaosMod
 
     public class NoGravity: Modifier
     {
-        public NoGravity(): base("달 중력", "...")
+        public NoGravity(): base("evt_moon_gravity", "evt_moon_gravity_desc")
         {
             minTimer = 60f;
             maxTimer = 120f;
@@ -1179,47 +1173,23 @@ namespace ChaosMod
         }
     }
 
-    public class Fart: Modifier
-    {
-        public Fart(): base("우클릭 방귀", "드러워...")
-        {
-            minTimer = 20f;
-            maxTimer = 40f;
-        }
-
-        public override Modifier Clone()
-        {
-            return new Fart() { Instance = this, isClone = true };
-        }
-
-        private float timer = 2f;
-        public override void Update()
-        {
-            base.Update();
-
-            if (timer > 0) {
-                timer -= Time.unscaledDeltaTime;
-            } else {
-                if (Input.GetMouseButtonDown(1)) {
-                    timer = 2f;
-
-                }
-            }
-        }
-    }
-
     public class ThinkFast : Modifier
     {
-        public static Image flash;
-        public static Image scout;
+        internal static Image flash;
+        internal static Image scout;
 
-        public static GameObject text1;
-        public static GameObject text2;
+        internal static GameObject text1;
+        internal static GameObject text2;
 
-        public ThinkFast(): base("THINK FAST CHUCKLENUTS!", "으악")
+        internal static string StunItemPath = "items/Item Grenade Stun";
+        internal static GameObject StunItemPrefab;
+
+        public ThinkFast(): base("evt_think_fast", "evt_think_fast_desc")
         {
             isOnce = true;
             options.oncePerLevel = true;
+
+            StunItemPrefab = Resources.Load<GameObject>(StunItemPath);
         }
 
         public override void Start()
@@ -1235,7 +1205,6 @@ namespace ChaosMod
             AudioClip voice = inst.assets.LoadAsset<AudioClip>("Scout_stunballhit15");
             AudioClip flashback = inst.assets.LoadAsset<AudioClip>("flashbang");
 
-            // THINK FAST CHUCKLENUTS!!
             inst.AudioSource.PlayOneShot(voice);
 
             text1.SetActive(true);
@@ -1248,31 +1217,413 @@ namespace ChaosMod
             // flashback
             text1.SetActive(false);
             text2.SetActive(false);
-            inst.AudioSource.PlayOneShot(flashback);
+            // inst.AudioSource.PlayOneShot(flashback);
             scout.gameObject.SetActive(false);
             
-            PlayerAvatar.instance.tumble.TumbleSet(true, false);
-            PlayerAvatar.instance.tumble.TumbleOverrideTime(2f);
+            //PlayerAvatar.instance.tumble.TumbleSet(true, false);
+            //PlayerAvatar.instance.tumble.TumbleOverrideTime(2f);
 
-            System.Func<float, float> easeInExpo = t => Mathf.Pow(2f, 10f * t - 10f);
-            float time = 0f;
-            while (time < flashback.length)
+            if (GameManager.Multiplayer())
             {
-                float alpha = time / flashback.length;
-
-                Color col = flash.color;
-                col.a = 1f - easeInExpo(alpha);
-                flash.color = col;
-
-                time += Time.unscaledDeltaTime;
-                yield return null;
+                GameObject itemStun = PhotonNetwork.Instantiate(StunItemPath, PlayerAvatar.instance.localCamera.transform.position + new Vector3(0f, 2f, 0f), Quaternion.identity);
+                ChaosController.instance.view.RPC("GrenadeStunExplosionRPC", RpcTarget.All, itemStun.GetComponent<PhotonView>().ViewID);
+            } else {
+                GameObject itemStun = GameObject.Instantiate(StunItemPrefab, PlayerAvatar.instance.localCamera.transform.position + new Vector3(0f, 2f, 0f), Quaternion.identity);
+                var script = itemStun.GetComponent<ItemGrenade>();
+                script.tickTime = 0;
+                Util.GetInternalVar(script, "isActive").SetValue(script, true);
             }
-            flash.color = new Color(1,1,1,0);
+
+            //System.Func<float, float> easeInExpo = t => Mathf.Pow(2f, 10f * t - 10f);
+            //float time = 0f;
+            //while (time < flashback.length)
+            //{
+            //    float alpha = time / flashback.length;
+
+            //    Color col = flash.color;
+            //    col.a = 1f - easeInExpo(alpha);
+            //    flash.color = col;
+
+            //    time += Time.unscaledDeltaTime;
+            //    yield return null;
+            //}
+            //flash.color = new Color(1,1,1,0);
         }
 
         public override Modifier Clone()
         {
             return new ThinkFast() { Instance = this, isClone = true };
+        }
+    }
+
+    public class ForcePause: Modifier
+    {
+        public ForcePause(): base("일시정지", "어르으음!!!")
+        {
+            isOnce = true;
+        }
+
+        public override void Start()
+        {
+            base.Start();
+            Util.GetInternalVar<MenuPage>(MenuPageEsc.instance, "menuPage").PageStateSet(MenuPage.PageState.Opening);
+        }
+
+        public override Modifier Clone()
+        {
+            return new ForcePause() { Instance = this, isClone = true };
+        }
+    }
+
+    public class ClubMood: Modifier
+    {
+        public static float BPM = 140.000f;
+        float bps = 0f;
+        AudioSource src;
+        public ClubMood(): base("evt_club_mood", "evt_club_mood_desc")
+        {
+            float tempBPS = 60f / BPM;
+
+            while (minTimer < 60f)
+            {
+                minTimer += tempBPS;
+            }
+            maxTimer = minTimer;
+            while (maxTimer < 90f)
+            {
+                maxTimer += tempBPS;
+            }
+        }
+
+        private List<EnemyRigidbody> rbList;
+        Color ogLight = Color.clear;
+        private List<PlayerAvatar> players;
+        private List<PhysGrabObject> items;
+        public override void Start()
+        {
+            base.Start();
+
+            foreach (var evt in Modifiers.Events)
+            {
+                if (evt is ClubMood)
+                    Modifiers.Excludes.Add(evt);
+            }
+
+            src = ChaosMod.Instance.ClubSource;
+            src.volume = 0f;
+            src.Play();
+
+            bps = 60f / BPM;
+
+            ogLight = RenderSettings.ambientLight;
+
+            items = GameObject.FindObjectsByType<PhysGrabObject>(0).ToList();
+
+            players = SemiFunc.PlayerGetAll();
+            ChaosMod.Instance.StartCoroutine(MusicFadeIn());
+        }
+
+        IEnumerator MusicFadeIn()
+        {
+            float t = 0f;
+            while (t < 1f)
+            {
+                src.volume = t;
+
+                t += Time.deltaTime * 2f;
+                yield return null;
+            }
+
+            src.volume = 1f;
+        }
+
+        int lastBeat = -1;
+        Color[] colors = [
+            Color.red, new Color(1,1,0), Color.yellow, Color.green, Color.cyan, Color.blue, Color.magenta
+        ];
+        Color curColor = Color.clear;
+        Color lastColor = Color.blue;
+        float fov = 70f;
+        float baseFOV = 70f;
+        public override void Update()
+        {
+            float beat = src.time / bps;
+            if (Mathf.FloorToInt(beat) != lastBeat)
+            {
+                lastBeat = Mathf.FloorToInt(beat);
+
+                if (SemiFunc.IsMasterClientOrSingleplayer())
+                {
+                    foreach (var enemy in ChaosMod.Instance.spawnedEnemys)
+                    {
+                        var rb = enemy.GetComponent<EnemyRigidbody>();
+                        if (rb == null) continue;
+                        rb.enemy.GetComponent<EnemyStateStunned>().Set(timerSelf + 5f);
+
+                        var realRB = rb.GetComponent<Rigidbody>();
+                        realRB.AddForce(Vector3.up * 15f, ForceMode.Impulse);
+                    }
+
+
+                    foreach (var valuable in items)
+                    {
+                        if (valuable == null) continue;
+                        valuable.OverrideIndestructible(timerSelf + 3f);
+                        bool fuckit = true;
+                        if (valuable.TryGetComponent<PhysGrabObjectImpactDetector>(out var impact))
+                            fuckit = !impact.inCart;
+
+                        if ((bool)valuable.rb && fuckit)
+                            valuable.rb.AddForce(Vector3.up * (3.5f * valuable.massOriginal), ForceMode.Impulse);
+                    }
+                }
+
+                curColor = colors[Random.Range(0, colors.Length)];
+                while (curColor == lastColor)
+                {
+                    curColor = colors[Random.Range(0, colors.Length)];
+                }
+                lastColor = curColor;
+
+                fov = ChaosMod.Instance.ConfigDizzyness.Value ? baseFOV - 5f : baseFOV - 2.5f;
+            }
+            RenderSettings.ambientLight = curColor;
+
+            float headTilt = Mathf.Sin(Mathf.PI * 2f * beat) * 25f;
+
+            foreach (var plr in players)
+            {
+                if (plr == null) continue;
+                // local
+                if (SemiFunc.PlayerAvatarLocal() == plr)
+                {
+                    plr.playerExpression.OverrideExpressionSet(4, 100f);
+                    PlayerExpressionsUI.instance.playerExpression.OverrideExpressionSet(4, 100f);
+                    PlayerExpressionsUI.instance.playerAvatarVisuals.HeadTiltOverride(headTilt * 0.5f);
+                }
+                else
+                {
+                    plr.playerAvatarVisuals.HeadTiltOverride(headTilt);
+                }
+            }
+
+            CameraZoom.Instance.OverrideZoomSet(fov, .5f, 1000f, 1000f, ChaosMod.Instance.gameObject, 5);
+            fov = Mathf.Lerp(fov, baseFOV, 1f - Mathf.Exp(-Time.deltaTime * 10f));
+
+            float beatX = Util.BeatMath(beat, BPM, 0f);
+            for (int i = 0; i < ChaosMod.Instance.texts.Count; i++)
+            {
+                TextLerp text = ChaosMod.Instance.texts[i];
+                if (!(bool)text) continue;
+                text.posOffset = new Vector2(beatX * (i % 2 == 0 ? 1f : -1f), 0f);
+            }
+        }
+
+        IEnumerator MusicFadeOut()
+        {
+            AudioSource src = ChaosMod.Instance.ClubSource;
+            float t = 0f;
+            while (t < 1f)
+            {
+                src.volume = 1f-t;
+
+                t += Time.deltaTime * 2f;
+                yield return null;
+            }
+
+            src.volume = 0f;
+        }
+
+        public override void OnFinished()
+        {
+            foreach (var evt in Modifiers.Events)
+            {
+                if (evt is ClubMood)
+                    Modifiers.Excludes.Remove(evt);
+            }
+            ChaosMod.Instance.StartCoroutine(MusicFadeOut());
+            RenderSettings.ambientLight = ogLight;
+            for (int i = 0; i < ChaosMod.Instance.texts.Count; i++)
+            {
+                TextLerp text = ChaosMod.Instance.texts[i];
+                if (!(bool)text) continue;
+                text.posOffset = Vector2.zero;
+            }
+            base.OnFinished();
+        }
+
+        public override Modifier Clone()
+        {
+            return new ClubMood() { Instance = this, isClone = true };
+        }
+    }
+
+    public class Doomsday: Modifier
+    {
+        public Doomsday(): base("종말", "하루 뒤 지구가 멸망한다면? 하루 뒤라고 하면 한참 남았으니 지금 지구가 멸망하고 있다고 해두죠.")
+        {
+            minTimer = 30f;
+            maxTimer = 60f;
+        }
+
+        private List<PlayerAvatar> players;
+        private List<PhysGrabObject> items;
+
+        public override void Start()
+        {
+            base.Start();
+
+            items = GameObject.FindObjectsByType<PhysGrabObject>(0).ToList();
+            // do not make cart and tumbled players go crazy move because it makes the game unplayable
+            items.RemoveAll(x => x.transform.name.Contains("Cart") || x.transform.name.Contains("Tumble"));
+            players = SemiFunc.PlayerGetAll();
+        }
+
+        public override void Update()
+        {
+            if (SemiFunc.IsMasterClientOrSingleplayer()) {
+                foreach (var enemy in ChaosMod.Instance.spawnedEnemys)
+                {
+                    var rb = enemy.GetComponent<EnemyRigidbody>();
+                    if (rb == null) continue;
+                    rb.enemy.GetComponent<EnemyStateStunned>().Set(timerSelf + 5f);
+
+                    var realRB = rb.GetComponent<Rigidbody>();
+                    if (realRB.velocity.magnitude <= 50f)
+                        realRB.AddForce(realRB.transform.up * 10f, ForceMode.Impulse);
+                    if (realRB.angularVelocity.magnitude <= 25f)
+                        realRB.AddTorque(realRB.transform.forward * Random.Range(0.5f, 2f) * 10f, ForceMode.Impulse);
+                }
+
+
+                foreach (var valuable in items)
+                {
+                    if (valuable == null) continue;
+                    // TODO: Do not affect if items are in the extraction or cart
+                    valuable.OverrideIndestructible(timerSelf + 3f);
+                    bool fuckit = true;
+                    if (valuable.TryGetComponent<PhysGrabObjectImpactDetector>(out var impact))
+                        fuckit = !(impact.inCart || valuable.grabbed);
+
+                    if ((bool)valuable.rb && fuckit)
+                    {
+                        if (valuable.rb.velocity.magnitude <= 25f)
+                            valuable.rb.AddForce(valuable.transform.up * (2f * valuable.massOriginal), ForceMode.Impulse);
+                        if (valuable.rb.angularVelocity.magnitude <= 25f)
+                            valuable.rb.AddTorque(valuable.transform.forward * (2f * Random.Range(0.5f, 2f) * valuable.massOriginal), ForceMode.Impulse);
+                    }
+                }
+            }
+
+            if (!ChaosMod.Instance.ConfigDizzyness.Value)
+                return;
+
+            GameDirector.instance.CameraShake.Shake(2f, .5f);
+            GameDirector.instance.CameraImpact.Shake(2f, .5f);
+        }
+
+        public override Modifier Clone()
+        {
+            return new Doomsday() { Instance = this, isClone = true };
+        }
+    }
+
+    public class GravityMult: Modifier
+    {
+        internal float mult = 1f;
+        public GravityMult(float mult): base("evt_gravity_mult", "evt_gravity_mult_desc")
+        {
+            this.mult = mult;
+            minTimer = 30f;
+            maxTimer = 60f;
+        }
+
+        public override string GetName()
+        {
+            return Language.GetText(name).Replace("%f", mult.ToString());
+        }
+
+        public override void Start()
+        {
+            base.Start();
+            Physics.gravity = new Vector3(0f, -9.81f * mult, 0f);
+            foreach (Modifier evt in Modifiers.Events)
+            {
+                if (evt is GravityMult)
+                {
+                    if (!Modifiers.Excludes.Contains(evt))
+                        Modifiers.Excludes.Add(evt);
+                }
+            }
+        }
+
+        public override void OnFinished()
+        {
+            Physics.gravity = new Vector3(0f, -9.81f, 0f);
+            foreach (Modifier evt in Modifiers.Events)
+            {
+                if (evt is GravityMult)
+                {
+                    if (Modifiers.Excludes.Contains(evt))
+                        Modifiers.Excludes.Remove(evt);
+                }
+            }
+            base.OnFinished();
+        }
+
+        public override Modifier Clone()
+        {
+            return new GravityMult(mult) { isClone = true, Instance = this };
+        }
+    }
+
+    public class TimeMult: Modifier
+    {
+        internal float mult = 1f;
+        public TimeMult(float mult): base("evt_timer_mult", "evt_timer_mult_desc")
+        {
+            this.mult = mult;
+            minTimer = 30f;
+            maxTimer = 60f;
+        }
+
+        public override string GetName()
+        {
+            return Language.GetText(name).Replace("%f", mult.ToString());
+        }
+
+        public override void Start()
+        {
+            base.Start();
+            ChaosMod.Instance.controller.timeScale = mult;
+
+            foreach (Modifier evt in Modifiers.Events)
+            {
+                if (evt is TimeMult)
+                {
+                    if (!Modifiers.Excludes.Contains(evt))
+                        Modifiers.Excludes.Add(evt);
+                }
+            }
+        }
+
+        public override void OnFinished()
+        {
+            ChaosMod.Instance.controller.timeScale = 1f;
+            foreach (Modifier evt in Modifiers.Events)
+            {
+                if (evt is TimeMult)
+                {
+                    if (Modifiers.Excludes.Contains(evt))
+                        Modifiers.Excludes.Remove(evt);
+                }
+            }
+            base.OnFinished();
+        }
+
+        public override Modifier Clone()
+        {
+            return new TimeMult(mult) { isClone = true, Instance = this };
         }
     }
 }

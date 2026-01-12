@@ -22,6 +22,7 @@ namespace ChaosMod
         {
             if (timeLeft > 0f)
                 timeLeft -= Time.unscaledDeltaTime;
+            timeLeft = Mathf.Max(0f, timeLeft);
 
             int seconds = Mathf.FloorToInt(timeLeft % 60f);
             int minutes = Mathf.FloorToInt((timeLeft / 60) % 60f);

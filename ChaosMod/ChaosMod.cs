@@ -11,6 +11,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.Rendering.PostProcessing;
 using UnityEngine.UI;
 using REPOLib.Modules;
+using System.Globalization;
 
 namespace ChaosMod
 {
@@ -18,12 +19,23 @@ namespace ChaosMod
     public class ChaosMod : BaseUnityPlugin
     {
         internal static ChaosMod Instance { get; private set; } = null!;
-        public static readonly bool IsDebug = true;
-        public static readonly bool DISABLE_TIMER = true;
+        internal static bool IsDebug
+        {
+            get {
+                bool enable = false;
+                return Instance.DevMode || enable;
+            }
+        }
+        public static readonly bool DISABLE_TIMER = false;
         internal const float MaxEventTimer = 20f;
+        /// <summary>
+        /// This list contains enemy who is not despawned. (if despawns removes from the list automatically)
+        /// </summary>
+        internal HashSet<EnemyParent> spawnedEnemys = new HashSet<EnemyParent>();
         internal new static ManualLogSource Logger => Instance._logger;
         private ManualLogSource _logger => base.Logger;
         internal Harmony? Harmony { get; set; }
+        internal bool DevMode = false;
 
         internal Canvas UICanvas;
         internal RectTransform barRect;
@@ -33,15 +45,16 @@ namespace ChaosMod
         internal AudioSource EnemyAS;
         internal AudioSource RumbleAS;
         internal AudioSource AudioSource;
+        internal AudioSource ClubSource;
 
         internal PostProcessVolume shaderOverlay;
 
-        internal ConfigEntry<bool> ConfigKorean;
         internal ConfigEntry<int> ConfigBarColorR;
         internal ConfigEntry<int> ConfigBarColorG;
         internal ConfigEntry<int> ConfigBarColorB;
         internal ConfigEntry<bool> ConfigDizzyness;
         internal ConfigEntry<bool> ConfigFamilyFriendly;
+        internal ConfigEntry<bool> ConfigDevMode;
         internal Dictionary<string, bool> Exclude_Modifiers = new Dictionary<string, bool>();
 
         internal List<GameObject> PrefabToAddNetwork = new List<GameObject>();
@@ -54,14 +67,14 @@ namespace ChaosMod
             this.gameObject.transform.parent = null;
             this.gameObject.hideFlags = HideFlags.HideAndDontSave;
 
-            Language.Init();
-            string general = Language.GetText("기본");
-            ConfigKorean = Config.Bind<bool>(general, "한국어", false, new ConfigDescription("켜져 있으면 한국어를 사용합니다. If it's on, this mod will use korean."));
-            ConfigBarColorR = Config.Bind<int>(general, Language.GetText("게이지 빨간색 차지 비중"), 130, new ConfigDescription("바의 빨간 색입니다. Bar's Red Color.", new AcceptableValueRange<int>(0, 255)));
-            ConfigBarColorG = Config.Bind<int>(general, Language.GetText("게이지 초록색 차지 비중"), 0, new ConfigDescription("바의 초록 색입니다. Bar's Green Color.", new AcceptableValueRange<int>(0, 255)));
-            ConfigBarColorB = Config.Bind<int>(general, Language.GetText("게이지 파란색 차지 비중"), 0, new ConfigDescription("바의 파란 색입니다. Bar's Blue Color.", new AcceptableValueRange<int>(0, 255)));
-            ConfigDizzyness = Config.Bind<bool>(general, Language.GetText("어지러움"), true, new ConfigDescription("꺼져 있으면 어지러운 효과를 낮추거나 비활성화합니다. If it's off, disables some dizzy effect."));
-            ConfigFamilyFriendly = Config.Bind<bool>(general, Language.GetText("가족 친화적"), false, new ConfigDescription("켜져 있으면 비속어를 필터링합니다. (호스트 전용) If it's on, filters some bad words. (Host only)"));
+            Language.Load(CultureInfo.CurrentCulture.Name == "ko-KR" ? "ko" : "en-us");
+            string general = Language.GetText("options_general");
+            ConfigBarColorR =      Config.Bind<int> (general, Language.GetText("options_gauge_red_color"),  130,   new ConfigDescription(Language.GetText("options_gauge_red_color_desc"), new AcceptableValueRange<int>(0, 255)));
+            ConfigBarColorG =      Config.Bind<int> (general, Language.GetText("options_gauge_green_color"),0,     new ConfigDescription(Language.GetText("options_gauge_green_color_desc"), new AcceptableValueRange<int>(0, 255)));
+            ConfigBarColorB =      Config.Bind<int> (general, Language.GetText("options_gauge_blue_color"), 0,     new ConfigDescription(Language.GetText("options_gauge_blue_color_desc"), new AcceptableValueRange<int>(0, 255)));
+            ConfigDizzyness =      Config.Bind<bool>(general, Language.GetText("options_dizzyness"),        true,  Language.GetText("options_dizzyness_desc"));
+            ConfigFamilyFriendly = Config.Bind<bool>(general, Language.GetText("options_family_friendly"),  false, Language.GetText("options_family_friendly_desc"));
+            ConfigDevMode =        Config.Bind<bool>(general, Language.GetText("oprions_dev_mode"),         false, Language.GetText("options_dev_mode_desc"));
 
             ConfigBarColorR.SettingChanged += (sender, value) =>
             {
@@ -78,6 +91,7 @@ namespace ChaosMod
                 if (barImg != null)
                     barImg.color = new Color(barImg.color.r, barImg.color.g, ConfigBarColorB.Value / 255f, 1f);
             };
+            ConfigDevMode.SettingChanged += (s, v) => DevMode = ConfigDevMode.Value;
 
             Patch();
             Logger.LogInfo($"{Info.Metadata.Name} has loaded!");
@@ -161,6 +175,21 @@ namespace ChaosMod
             AudioSource.dopplerLevel = 0f;
             AudioSource.playOnAwake = false;
             AudioSource.outputAudioMixerGroup = AudioManager.instance.SoundMasterGroup;
+
+            GameObject clubObj = new GameObject("Club Music Source");
+            clubObj.transform.parent = yoinky.transform;
+            ClubSource = clubObj.AddComponent<AudioSource>();
+            ClubSource.dopplerLevel = 0f;
+            ClubSource.playOnAwake = false;
+            ClubSource.outputAudioMixerGroup = AudioManager.instance.SoundMasterGroup;
+
+            // ㅅㅂ 모드 만드는거 못해먹겠다
+            // 붐박스 노래 꺼내오기
+            GameObject boombox = Instantiate(Resources.Load<GameObject>("valuables/04 big/Valuable Museum Boombox"), new Vector3(9e9f, 0f, 0f), Quaternion.identity);
+            boombox.SetActive(false);
+            ClubSource.clip = boombox.GetComponent<ValuableBoombox>().soundBoomboxMusic.Sounds[0];
+            ClubSource.loop = true;
+            Destroy(boombox);
             
             var reverb = spinky.AddComponent<AudioReverbFilter>();
             reverb.reverbPreset = AudioReverbPreset.Concerthall;
@@ -184,21 +213,25 @@ namespace ChaosMod
             Image img1 = Text1Obj.AddComponent<Image>();
             ThinkFast.text1 = img1.gameObject;
             Text1Obj.SetActive(false);
-            
-            uhoh.pivot = new Vector2(.5f, 1f);
-            uhoh.localScale = new Vector2(674, 94.5f);
-            uhoh.localPosition = new Vector2(0f, -20f);
 
-            GameObject Text2Obj = new GameObject("Top Text");
+            uhoh.anchorMin = new Vector2(.5f, 1f);
+            uhoh.anchorMax = new Vector2(.5f, 1f);
+            uhoh.pivot = new Vector2(.5f, 1f);
+            uhoh.sizeDelta = new Vector2(674, 94.5f);
+            uhoh.anchoredPosition = new Vector2(0f, -40f);
+
+            GameObject Text2Obj = new GameObject("Bottom Text");
             var uhoh2 = Text2Obj.AddComponent<RectTransform>();
             Text2Obj.transform.parent = canvas.transform;
             Image img2 = Text2Obj.AddComponent<Image>();
             ThinkFast.text2 = img2.gameObject;
             Text2Obj.SetActive(false);
 
+            uhoh2.anchorMin = new Vector2(.5f, 0f);
+            uhoh2.anchorMax = new Vector2(.5f, 0f);
             uhoh2.pivot = new Vector2(.5f, 0f);
-            uhoh2.localScale = new Vector2(856, 94.5f);
-            uhoh2.position = new Vector2(0f, 20f);
+            uhoh2.sizeDelta = new Vector2(856, 94.5f);
+            uhoh2.anchoredPosition = new Vector2(0f, 20f);
 
             GameObject flashObj = new GameObject("Flash Sprite");
             flashObj.transform.parent = canvas.transform;
@@ -274,6 +307,9 @@ namespace ChaosMod
             SceneManager.sceneLoaded += OnSceneChange;
             photonViewInited = false;
 
+            img1.sprite = assets.LoadAsset<Sprite>("THINK FAST");
+            img2.sprite = assets.LoadAsset<Sprite>("CHUCKLENUTS");
+
             ThinkFast.scout.sprite = assets.LoadAsset<Sprite>("scout tf2");
             scoutTF2.SetActive(false);
 
@@ -318,7 +354,8 @@ namespace ChaosMod
             Exclude_Modifiers.Clear();
             Modifiers.Init(mod =>
             {
-                var config = Config.Bind<bool>(Language.GetText("레벨 이벤트"), mod.GetName(), true, new ConfigDescription(mod.description));
+                var category = Language.GetText("options_lvl_evts");
+                var config = Config.Bind<bool>(category, mod.GetName(), true, new ConfigDescription(mod.GetDesc()));
                 config.SettingChanged += (sender, value) =>
                 {
                     OnEventSettingChanged(config, mod);
@@ -335,18 +372,18 @@ namespace ChaosMod
                     Logger.LogMessage($"프리팹 추가됨: {prefab.name}");
             }
 
-            Logger.LogMessage("Done. '-' here have a clover's face");
+            Logger.LogMessage("Setup Done. '-'");
         } // void Start()
 
         void OnEventSettingChanged(ConfigEntry<bool> config, Modifier mod)
         {
             if (Exclude_Modifiers.ContainsKey(config.Definition.Key))
-                Exclude_Modifiers[mod.name] = !config.Value;
+                Exclude_Modifiers[mod.GetName()] = !config.Value;
             else
-                Exclude_Modifiers.Add(mod.name, !config.Value);
+                Exclude_Modifiers.Add(mod.GetName(), !config.Value);
 
             if (IsDebug)
-                Logger.LogInfo($"이벤트 상태 변경: {mod.name} => {config.Value}");
+                Logger.LogInfo($"이벤트 상태 변경: {mod.GetName()} => {config.Value}");
         }
 
         internal bool photonViewInited = false;
@@ -503,7 +540,7 @@ namespace ChaosMod
 
                     float y = text_height * visibleIndex;
 
-                    if (y >= 375f)
+                    if (y >= 375f * controller.timeScale)
                     {
                         EventToRemove.Add(i);
                         TextToRemove.Add(i);
@@ -609,7 +646,7 @@ namespace ChaosMod
                 photonViewInited = InitPhotonView();
             }
 
-            if (carObject == null)
+            if (carObject == null || car == null)
             {
                 var car_assets = CarCrash.car_assets;
                 if (!GameManager.Multiplayer())
@@ -621,9 +658,17 @@ namespace ChaosMod
                 }
                 else if (controller != null && controller.view != null && SemiFunc.IsMasterClient())
                 {
-                    carObject = PhotonNetwork.Instantiate("Killer Joe", Vector3.zero, Quaternion.identity);
-                    controller.view.RPC("FindCarRPC", RpcTarget.All);
+                    PhotonNetwork.Instantiate("Killer Joe", Vector3.zero, Quaternion.identity);
+                    
                 }
+                
+                // add scripts to all clients!!!!
+                if (SemiFunc.IsMultiplayer())
+                {
+                    controller.FindCarRPC();
+                }
+            } else if (!car.setupDone) {
+                car.Start();
             }
 
             if (startTimer < 5f)

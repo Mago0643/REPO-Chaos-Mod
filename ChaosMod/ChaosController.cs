@@ -10,6 +10,7 @@ namespace ChaosMod
     public class ChaosController: MonoBehaviour
     {
         internal PhotonView view;
+        public static ChaosController instance;
         TextMeshProUGUI DebugText
         {
             get => ChaosMod.Instance.DebugText;
@@ -17,6 +18,7 @@ namespace ChaosMod
 
         void Start()
         {
+            instance = this;
             view = GetComponent<PhotonView>();
             eventTimer = ChaosMod.MaxEventTimer;
         }
@@ -93,7 +95,7 @@ namespace ChaosMod
                     bool hasTimerDoneOrIsOnce = tempMod.isOnce || tempMod.timerSelf <= 0f;
                     bool isMultiplayerOnly =  tempMod.Instance.options.multiplayerOnly;
                     bool isSingleplayerOnly = tempMod.Instance.options.singleplayerOnly;
-                    bool excludedOptions = ChaosMod.Instance.Exclude_Modifiers[tempMod.name];
+                    bool excludedOptions = ChaosMod.Instance.Exclude_Modifiers[tempMod.GetName()];
                     bool type = true;
                     if ((isMultiplayerOnly && !GameManager.Multiplayer()) || (isSingleplayerOnly && GameManager.Multiplayer()))
                         type = false;
@@ -298,29 +300,18 @@ namespace ChaosMod
         }
 
         [PunRPC]
-        void FindCarRPC()
+        public void FindCarRPC()
         {
             StartCoroutine(FindCar());
         }
 
-        public void FartOnPlayer(PlayerAvatar avatar)
-        {
-            if (GameManager.Multiplayer())
-                view.RPC("FartPlayerRPC", RpcTarget.All, avatar.photonView.ViewID);
-            else {
-
-            }
-        }
-
         [PunRPC]
-        void FartPlayerRPC(int viewID)
+        internal void GrenadeStunExplosionRPC(int viewID)
         {
-            var plr = PhotonView.Find(viewID).GetComponent<PlayerAvatar>();
-            var chat = Util.GetInternalVar<PlayerVoiceChat>(plr, "voiceChat");
-            var source = Util.GetInternalVar<AudioSource>(chat, "audioSource");
-
-            // source.PlayOneShot();
-            
+            GameObject item = PhotonView.Find(viewID).gameObject;
+            var script = item.GetComponent<ItemGrenade>();
+            script.tickTime = 0;
+            Util.GetInternalVar(script, "isActive").SetValue(script, true);
         }
     } // public class ChaosController: MonoBehaviour
 } // namespace ChaosMod

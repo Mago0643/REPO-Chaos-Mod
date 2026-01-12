@@ -14,18 +14,14 @@ namespace ChaosMod
         public static void Init(Action<Modifier> callback = null)
         {
             List<Modifier> modifiers = new List<Modifier>() {
-                new Modifier("무효",""){isOnce = true},    // 무효
+                new Modifier("evt_none",""){isOnce = true},// 무효
                 new Tumble(),                              // 넘어지기
                 new KillAllMonsters(),                     // 모든 몬스터 죽이기
                 new QuakeFOV(),                            // 넓은 시야각
-                new GameSpeed(2f, "게임 속도 두배"),
-                new GameSpeed(0.75f, "게임 속도 -35%"),
+                new GameSpeed(2f, "2"),
+                new GameSpeed(0.75f, "0.75"),
                 new BrokeAllDoor(),                        // 모든 미닫이문 부수기
-                new MonsterSound("갓난쟁이", "rugurt", 1), // 갓난쟁이
-                new MonsterSound("광대", "clown", 1),      // 광대
-                new MonsterSound("짐승", "animal", 3),     // 짐승
-                new MonsterSound("오리", "duck", 3),       // 오리
-                new MonsterSound("사냥꾼", "hunter", 3),   // 사냥꾼
+                new MonsterSound(),                       // 환청
                 new AddHealth(100),                        // +100 HP
                 new AddHealth(50),                         // +50 HP
                 new AddHealth(0),                          // 0 HP
@@ -36,12 +32,12 @@ namespace ChaosMod
                 new DuckMadness(),                         // 축지법 쓰는 오리
                 new SayRandomThnings(),                    // 무작위 대사 말하기
                 new ShakeScreen(),                         // 지진
-                new IncreaseValuableWorth(2f,"귀중품 가격 두배"),
-                new IncreaseValuableWorth(0.9f,"귀중품 가격 -10%"),
+                new IncreaseValuableWorth(2f,"2"),
+                new IncreaseValuableWorth(0.9f,"0.9"),
                 new SpinEternally(),                       // 회전회오리이이이
                 new FriendlyMonsters(),                    // 친화적인 몬스터
-                new VoicePitch(1.5f,"높은음 목소리"),      // 목소리 음조절 x1.5
-                new VoicePitch(0.7f,"낮은음 목소리"),      // 목소리 음조절 x0.7
+                new VoicePitch(1.5f,"evt_voice_high"),     // 목소리 음조절 x1.5
+                new VoicePitch(0.7f,"evt_voice_low"),      // 목소리 음조절 x0.7
                 new DisablePostProcessing(),               // 포스트 프로세싱 비활성화
                 new InvincibleOrb(),                       // 티타늄 오브
                 new ReviveAllPlayers(),                    // 죽은 플레이어 소생
@@ -53,6 +49,14 @@ namespace ChaosMod
                 new SpawnMonster(4),                       // 몬스터 4마리 소환
                 new NoGravity(),                           // 중력 없음
                 new ThinkFast(),                           // think fast ---
+                // new ForcePause(),                       // 일시정지
+                new ClubMood(),                            // 클럽 분위기
+                // new GravityMult(-1f),                   // 중력 반대로
+                new GravityMult(0.25f),                    // 중력 0.25배
+                new GravityMult(5f),                       // 중력 5배
+                new TimeMult(2f),                          // 타이머 2배
+                new TimeMult(0.5f),                        // 타이머 0.5배
+                new TimeMult(4f),                          // 타이머 4배
                 // 모든 플레이어가 무적
                 // 모든 몬스터가 무적
                 // CRT

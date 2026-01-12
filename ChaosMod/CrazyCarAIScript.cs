@@ -52,22 +52,6 @@ namespace ChaosMod
             "That’s supposed to be a human driving? A dog could’ve done a better job.",// 저게 사람이 운전하는 꼬라지라고? 개한테 시켜도 그것보단 잘하겠다.
             "That driver must be the reason for those warning signs.",                 // 교통 표지판은 저 운전자를 위한 거군.
             "YOU DRIVE LIKE YOU'RE PLAYING GRAND THEFT AUTO.",                         // 운전이 GTA 실사판이네?
-            "git gud",
-        };
-        private string[,] startMessages = new string[,]
-        {
-            {"Ah shit, here we go again.", "Ah shoot, here we go again."},                              // 젠장, 또 시작이네.
-            {"That car i fucking hate.", "I hate that car so much."},                                   // 내가 존나 싫어하는 자동차임.
-            {"Not again?", "Not again??"},                                                              // 또 시작이야?
-            {"Great, now we are going to have bad time.", "Great, now we are going to have bad time."}, // 좋아, 이제 고생길 열렸네.
-            {"ourple", "ourple"},                                                                       // 버라색
-            {"IT ALWAYS COME BACK.", "IT ALWAYS COME BACK."}                                            // "그건 항상 돌아온다!"
-        };
-        private string[,] deadMessages = new string[,]
-        {
-            {"Finally, that stupid bitch is gone.", "Finally, some peace."},  // 드디어, 저 멍청한 놈이 떠났군.
-            {"WAHOOOO", "WAHOOOO"},                                           // 와후!!
-            {"Finally, some peace.", "Okay, That car is gone for now."}       // 드디어 조용해졌네.
         };
         private bool yapping = false;
         private UnityEvent chat_callback;
@@ -159,7 +143,8 @@ namespace ChaosMod
             }
         }
 
-        void Start()
+        internal bool setupDone = false;
+        internal void Start()
         {
             SetupComponents();
             if (SemiFunc.IsMasterClientOrSingleplayer())
@@ -187,6 +172,7 @@ namespace ChaosMod
             }
 
             print("agent.enabled: " + agent.enabled + ", Transform View: " + GetComponent<PhotonTransformView>());
+            setupDone = true;
         }
 
         internal bool isSpawned = false;
@@ -274,8 +260,15 @@ namespace ChaosMod
         public void GoToNextPoint()
         {
             if (waypoints.Count == 0 && !isSpawned) return;
-            if (SemiFunc.IsMasterClientOrSingleplayer())
-                SetDestination(waypoints[UnityEngine.Random.Range(0, waypoints.Count)]);
+            if (SemiFunc.IsMasterClientOrSingleplayer()) {
+                // sometimes just go to player to ragebait
+                if (UnityEngine.Random.Range(0, 100) <= 25) {
+                    var players = SemiFunc.PlayerGetAll();
+                    SetDestination(players[UnityEngine.Random.Range(0, players.Count)].transform.position);
+                } else { 
+                    SetDestination(waypoints[UnityEngine.Random.Range(0, waypoints.Count)]);
+                }
+            }
         }
 
         void Hide()
@@ -290,11 +283,6 @@ namespace ChaosMod
         void OnDestroy()
         {
             if (!GameManager.Multiplayer() && !SemiFunc.IsMasterClient()) return;
-            int familyfriendly = ChaosMod.Instance.ConfigFamilyFriendly.Value ? 1 : 0;
-
-            ChatManager.instance.PossessChatScheduleStart(0x7FFFFFFF);
-            ChatManager.instance.PossessChat(ChatManager.PossessChatID.None, deadMessages[UnityEngine.Random.Range(0, deadMessages.GetLength(0)), familyfriendly], 4f, Color.red);
-            ChatManager.instance.PossessChatScheduleEnd();
             PhotonNetwork.RemoveCallbackTarget(this);
         }
 
@@ -343,7 +331,7 @@ namespace ChaosMod
             {
                 if (agent.isOnNavMesh && !agent.pathPending)
                 {
-                    if (agent.remainingDistance < 5f && isSpawned)
+                    if (agent.remainingDistance <= 1f && isSpawned)
                     {
                         GoToNextPoint();
                     }
@@ -403,6 +391,15 @@ namespace ChaosMod
             {
                 back.eulerAngles = new Vector3(back.eulerAngles.x, back.eulerAngles.y, -rotateTimer);
             }
+
+            if (SemiFunc.IsNotMasterClient())
+            {
+                if (hasPosData) {
+                    transform.position = targetPos;
+                    transform.eulerAngles = targetRot;
+                }
+                hasPosData = false;
+            }
         }
 
         Transform GetParentTransformByNameContains(Transform start, string name)
@@ -431,9 +428,8 @@ namespace ChaosMod
             bool isHit = Physics.BoxCast(origin, halfExtents, direction, out RaycastHit hit, transform.rotation, maxDistance);
             if (isHit)
             {
-
                 Transform crashed = GetParentTransformByNameContains(hit.transform, "Player");
-                if (crashed.name.Contains("Player"))
+                if (crashed != null && crashed.name.Contains("Player"))
                 {
                     SetDestination(hit.transform.position);
                     if (honkTimer <= 0f)
@@ -441,16 +437,32 @@ namespace ChaosMod
                 }
             }
 
-            PhotonNetwork.RaiseEvent(1, agent.transform.position, new RaiseEventOptions { Receivers = ReceiverGroup.Others }, SendOptions.SendUnreliable);
+            if (SemiFunc.IsMultiplayer()) {
+                PhotonNetwork.RaiseEvent(1, agent.transform.position, new RaiseEventOptions { Receivers = ReceiverGroup.Others }, SendOptions.SendUnreliable);
+                PhotonNetwork.RaiseEvent(2, agent.transform.eulerAngles, new RaiseEventOptions { Receivers = ReceiverGroup.Others }, SendOptions.SendUnreliable);
+            }
         }
 
         private Vector3 targetPos;
+        private Vector3 targetRot;
+        private bool hasPosData = false;
         public void OnEvent(EventData photonEvent)
         {
             if (photonEvent.Code == 1)
             {
                 targetPos = (Vector3)photonEvent.CustomData;
+                hasPosData = true;
+            }
+
+            if (photonEvent.Code == 2)
+            {
+                targetRot = (Vector3)photonEvent.CustomData;
+                hasPosData = true;
             }
         }
+
     }
 }
+
+// maybe the car will have 1000 hp and killing it drops 15,000~23,000$ money bag
+// it can have multiple cars in session, so killing it keep drops the price. (mininum 3,500~5,000$)
