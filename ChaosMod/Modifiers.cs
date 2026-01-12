@@ -18,8 +18,8 @@ namespace ChaosMod
                 new Tumble(),                              // 넘어지기
                 new KillAllMonsters(),                     // 모든 몬스터 죽이기
                 new QuakeFOV(),                            // 넓은 시야각
-                new GameSpeed(2f, "2"),
-                new GameSpeed(0.75f, "0.75"),
+                new GameSpeed(2f),
+                new GameSpeed(0.75f),
                 new BrokeAllDoor(),                        // 모든 미닫이문 부수기
                 new MonsterSound(),                       // 환청
                 new AddHealth(100),                        // +100 HP
@@ -32,8 +32,8 @@ namespace ChaosMod
                 new DuckMadness(),                         // 축지법 쓰는 오리
                 new SayRandomThnings(),                    // 무작위 대사 말하기
                 new ShakeScreen(),                         // 지진
-                new IncreaseValuableWorth(2f,"2"),
-                new IncreaseValuableWorth(0.9f,"0.9"),
+                new IncreaseValuableWorth(2f),
+                new IncreaseValuableWorth(0.9f),
                 new SpinEternally(),                       // 회전회오리이이이
                 new FriendlyMonsters(),                    // 친화적인 몬스터
                 new VoicePitch(1.5f,"evt_voice_high"),     // 목소리 음조절 x1.5

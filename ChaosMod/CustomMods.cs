@@ -96,18 +96,16 @@ namespace ChaosMod
     public class GameSpeed: Modifier
     {
         public float mult = 1f;
-        private string cockString = "";
-        public GameSpeed(float mult, string name): base("evt_game_speed", "evt_game_speed_desc")
+        public GameSpeed(float mult): base("evt_game_speed", "evt_game_speed_desc")
         {
             minTimer = 20f;
             maxTimer = 25f;
             this.mult = mult;
-            cockString = name;
         }
 
         public override string GetName()
         {
-            return Language.GetText(name).Replace("%s", cockString);
+            return Language.GetText(name).Replace("%f", mult.ToString());
         }
 
         public override void Start()
@@ -137,7 +135,7 @@ namespace ChaosMod
 
         public override Modifier Clone()
         {
-            return new GameSpeed(mult,cockString) { isClone = true, Instance = this };
+            return new GameSpeed(mult) { isClone = true, Instance = this };
         }
     }
 
@@ -726,21 +724,20 @@ namespace ChaosMod
     {
         public float mult = 1f;
 
-        public IncreaseValuableWorth(float mult, string name): base("귀중품 가격", "evt_increase_valuable_desc")
+        public IncreaseValuableWorth(float mult): base("귀중품 가격", "evt_increase_valuable_desc")
         {
             isOnce = true;
             this.mult = mult;
-            this.name = name;
         }
 
         public override string GetName()
         {
-            return Language.GetText("evt_increase_valuable").Replace("%s", Language.GetText(name));
+            return Language.GetText("evt_increase_valuable").Replace("%f", mult.ToString());
         }
 
         public override Modifier Clone()
         {
-            return new IncreaseValuableWorth(mult, name) { isClone = true, Instance = this };
+            return new IncreaseValuableWorth(mult) { isClone = true, Instance = this };
         }
 
         public override void Start()

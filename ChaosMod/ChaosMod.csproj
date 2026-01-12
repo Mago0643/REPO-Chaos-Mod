@@ -99,12 +99,15 @@
     <None Update="car_assets">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="lang\en-us.json">
+    <None Update="en-us.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="lang\ko.json">
+    <None Update="ko.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="lang\" />
   </ItemGroup>
 
 </Project>
