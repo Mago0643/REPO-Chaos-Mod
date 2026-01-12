@@ -9,8 +9,9 @@ namespace ChaosMod
         public static Dictionary<string, string> _table = new Dictionary<string, string>();
         public static void Load(string langCode)
         {
-            string path = Util.GetPluginDirectory(Path.Combine("lang", $"{langCode}.json"));
+            string path = Util.GetPluginDirectory($"{langCode}.json");
             if (!File.Exists(path)) {
+                ChaosMod.Logger.LogError($"존제하지 않음: {path}");
                 ChaosMod.Logger.LogError($"\"{langCode}\" 언어 데이터를 찾지 못하였습니다. 언어 키가 보일 수 있습니다.");
                 ChaosMod.Logger.LogError($"I cannot find language data named \"{langCode}\", language keys can be shown.");
                 return;
