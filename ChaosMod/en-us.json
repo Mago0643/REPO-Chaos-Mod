@@ -1,25 +1,13 @@
 {
   "options_general": "General",
-
-  "options_gauge_red_color": "Gauge Color Red",
-  "options_gauge_red_color_desc": "Do I need to explan this?",
-
-  "options_gauge_green_color": "Gauge Color Green",
-  "options_gauge_green_color_desc": "Do I need to explan this?",
-
-  "options_gauge_blue_color": "Gauge Color Blue",
-  "options_gauge_blue_color_desc": "Do I need to explan this?",
-
+  "options_gauge_color": "Time Bar Color",
   "options_dizzyness": "Dizzyness",
-  "options_dizzyness_desc": "If it's off, It disables or lowers some dizzy effects like camera shaking, force fov change.",
-
   "options_family_friendly": "Family Friendly",
-  "options_family_friendly_desc": "If it's on, deletes some cuss words. (Host only)",
-
   "options_dev_mode": "Devloper Mode",
-  "options_dev_mode_desc": "It's Devloper Mode. Yep.",
-
   "options_lvl_evts": "Level Events",
+  "options_evts_enabled": "Enabled",
+  "options_evts_chance": "Chance (%)",
+  "options_evts_range": "Duration",
 
   "evt_none": "Nothing",
   "evt_spawn_monsters": "Spawn %f Monsters",
@@ -75,10 +63,20 @@
   "evt_moon_gravity_desc": "...",
   "evt_think_fast": "THINK FAST, CHUCKLENUTS!",
   "evt_think_fast_desc": "WHAT",
+  "evt_text_think_fast": "THINK FAST",
+  "evt_text_chucklenuts": "CHUCKLENUTS!",
   "evt_club_mood": "Club Mood",
   "evt_club_mood_desc": "Woo-hoo! /(^o^)/",
   "evt_gravity_mult": "Gravity %fx",
   "evt_gravity_mult_desc": "It's fun to mess with gravity.",
   "evt_timer_mult": "Timer speed %fx",
-  "evt_timer_mult_desc": "Let's make it more chaos."
+  "evt_timer_mult_desc": "Let's make it more chaos.",
+  "evt_oil_floor": "Oil on the floor",
+  "evt_oil_floor_desc": "Be careful! The floor is a bit slippery.",
+
+  "exception_endofstream_config_1": "You got EndOfStreamException, maybe the settings file has been corruptted, or empty.",
+  "exception_endofstream_config_2": "Do not worry. You can repair that for just opening settings menu and changing something.",
+  "exception_config_invaild_header": "Config Load Error: Invaild Header",
+  "exception_config_version_match": "Config Load Error: This config is saved on higher version!"
+  
 }

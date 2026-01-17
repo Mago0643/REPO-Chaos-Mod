@@ -8,7 +8,7 @@ namespace ChaosMod
     [HarmonyPatch(typeof(EnemyParent))]
     internal class EnemyParentPatch
     {
-        [HarmonyPatch("Despawn"), HarmonyPostfix]
+        [HarmonyPatch("DespawnRPC"), HarmonyPostfix]
         static void Despawn_Postfix(EnemyParent __instance)
         {
             if (ChaosMod.Instance != null && ChaosMod.Instance.spawnedEnemys.Contains(__instance)) {
@@ -18,7 +18,7 @@ namespace ChaosMod
             }
         }
 
-        [HarmonyPatch("Spawn"), HarmonyPostfix]
+        [HarmonyPatch("SpawnRPC"), HarmonyPostfix]
         static void Spawn_Postfix(EnemyParent __instance)
         {
             if (ChaosMod.Instance != null && !ChaosMod.Instance.spawnedEnemys.Contains(__instance)) {
@@ -27,5 +27,7 @@ namespace ChaosMod
                     ChaosMod.Logger.LogInfo("Enemy Spawned");
             }
         }
+
+        
     }
 }

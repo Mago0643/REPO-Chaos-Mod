@@ -1,25 +1,13 @@
 {
   "options_general": "기본",
-
-  "options_gauge_red_color": "게이지의 빨간색 차지 비중",
-  "options_gauge_red_color_desc": "굳이 설명은 필요 없을 꺼 같은데요.",
-
-  "options_gauge_green_color": "게이지의 초록색 차지 비중",
-  "options_gauge_green_color_desc": "굳이 설명은 필요 없을 꺼 같은데요.",
-
-  "options_gauge_blue_color": "게이지의 파란색 차지 비중",
-  "options_gauge_blue_color_desc": "굳이 설명은 필요 없을 꺼 같은데요.",
-
+  "options_gauge_color": "타이머 바 색깔",
   "options_dizzyness": "어지러움",
-  "options_dizzyness_desc": "꺼져 있으면 어지러운 효과(카메라 흔들기, 시야각 강제 조정 등)를 낮추거나 비활성화합니다.",
-
   "options_family_friendly": "가족 친화적",
-  "options_family_friendly_desc": "켜져 있으면 비속어를 필터링합니다. (호스트 전용)",
-
   "options_dev_mode": "개발자 모드",
-  "options_dev_mode_desc": "개발자 모드죠. 더이상 설명할 게 있을까요?",
-
   "options_lvl_evts": "레벨 이벤트",
+  "options_evts_enabled": "활성화",
+  "options_evts_chance": "등장 확률 (%)",
+  "options_evts_range": "시간 길이",
 
   "evt_none": "무효",
   "evt_spawn_monsters": "몬스터 %f마리 소환",
@@ -65,7 +53,7 @@
   "evt_titanume_orb_desc": "구슬이 충격을 받아도 깨지지 않습니다.",
   "evt_big_eyes": "동공 확장",
   "evt_big_eyes_desc": "눈이 커집니다.",
-  "evt_revive_all": "죽은 플레이어 살리기",
+  "evt_revive_all": "죽은 세미봇 살리기",
   "evt_revive_all_desc": "죽은 모든 플레이어를 살립니다.",
   "evt_disable_all_lights": "전역 조명 비활성화",
   "evt_disable_all_lights_desc": "맵에 있는 조명을 전부 다 무시하게 만들어 어두운 부분이 없게 합니다.",
@@ -75,10 +63,19 @@
   "evt_moon_gravity_desc": "...",
   "evt_think_fast": "빨리 좀 생각해봐, 돌대가리야!",
   "evt_think_fast_desc": "으악",
+  "evt_text_think_fast": "빨리 좀 생각해봐",
+  "evt_text_chucklenuts": "돌대가리야!",
   "evt_club_mood": "클럽 분위기",
   "evt_club_mood_desc": "신난다 /(^o^)/",
   "evt_gravity_mult": "중력 %f배",
   "evt_gravity_mult_desc": "중력 가지고 노는 거 재미있네요.",
   "evt_timer_mult": "타이머 속도 %f배",
-  "evt_timer_mult_desc": "좀 더 정신사납게 만들어 볼까요오?"
+  "evt_timer_mult_desc": "좀 더 정신사납게 만들어 볼까요오?",
+  "evt_oil_floor": "바닥에 기름칠",
+  "evt_oil_floor_desc": "바닥이 좀 많이 미끄러우니 조심하세요!",
+
+  "exception_endofstream_config_1": "EndOfStreamException 오류가 발생했습니다. 설정 파일이 손상됐거나 빈 거 같습니다.",
+  "exception_endofstream_config_2": "이 오류는 설정창 들어가서 아무거나 바꾸면 해결할 수 있습니다.",
+  "exception_config_invaild_header": "설정 불러오기 실패: 헤더 이상함",
+  "exception_config_version_match": "설정 불러오기 실패: 이 설정은 더 높은 버전에서 저장됐습니다!"
 }

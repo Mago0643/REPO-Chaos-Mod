@@ -3,15 +3,20 @@ using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
 using Photon.Pun;
+using REPOLib.Modules;
+using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.Rendering.PostProcessing;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using REPOLib.Modules;
-using System.Globalization;
+using OptionItem = ChaosMod.OptionsMenuController.OptionItem;
+using OptionType = ChaosMod.OptionsMenuController.OptionType;
 
 namespace ChaosMod
 {
@@ -49,13 +54,7 @@ namespace ChaosMod
 
         internal PostProcessVolume shaderOverlay;
 
-        internal ConfigEntry<int> ConfigBarColorR;
-        internal ConfigEntry<int> ConfigBarColorG;
-        internal ConfigEntry<int> ConfigBarColorB;
-        internal ConfigEntry<bool> ConfigDizzyness;
-        internal ConfigEntry<bool> ConfigFamilyFriendly;
-        internal ConfigEntry<bool> ConfigDevMode;
-        internal Dictionary<string, bool> Exclude_Modifiers = new Dictionary<string, bool>();
+        internal ConfigEntry<KeyCode> ConfigOptionsMenu;
 
         internal List<GameObject> PrefabToAddNetwork = new List<GameObject>();
         
@@ -68,30 +67,7 @@ namespace ChaosMod
             this.gameObject.hideFlags = HideFlags.HideAndDontSave;
 
             Language.Load(CultureInfo.CurrentCulture.Name == "ko-KR" ? "ko" : "en-us");
-            string general = Language.GetText("options_general");
-            ConfigBarColorR =      Config.Bind<int> (general, Language.GetText("options_gauge_red_color"),  130,   new ConfigDescription(Language.GetText("options_gauge_red_color_desc"), new AcceptableValueRange<int>(0, 255)));
-            ConfigBarColorG =      Config.Bind<int> (general, Language.GetText("options_gauge_green_color"),0,     new ConfigDescription(Language.GetText("options_gauge_green_color_desc"), new AcceptableValueRange<int>(0, 255)));
-            ConfigBarColorB =      Config.Bind<int> (general, Language.GetText("options_gauge_blue_color"), 0,     new ConfigDescription(Language.GetText("options_gauge_blue_color_desc"), new AcceptableValueRange<int>(0, 255)));
-            ConfigDizzyness =      Config.Bind<bool>(general, Language.GetText("options_dizzyness"),        true,  Language.GetText("options_dizzyness_desc"));
-            ConfigFamilyFriendly = Config.Bind<bool>(general, Language.GetText("options_family_friendly"),  false, Language.GetText("options_family_friendly_desc"));
-            ConfigDevMode =        Config.Bind<bool>(general, Language.GetText("oprions_dev_mode"),         false, Language.GetText("options_dev_mode_desc"));
-
-            ConfigBarColorR.SettingChanged += (sender, value) =>
-            {
-                if (barImg != null)
-                    barImg.color = new Color(ConfigBarColorR.Value / 255f, barImg.color.g, barImg.color.b, 1f);
-            };
-            ConfigBarColorG.SettingChanged += (sender, value) =>
-            {
-                if (barImg != null)
-                    barImg.color = new Color(barImg.color.r, ConfigBarColorG.Value / 255f, barImg.color.b, 1f);
-            };
-            ConfigBarColorB.SettingChanged += (sender, value) =>
-            {
-                if (barImg != null)
-                    barImg.color = new Color(barImg.color.r, barImg.color.g, ConfigBarColorB.Value / 255f, 1f);
-            };
-            ConfigDevMode.SettingChanged += (s, v) => DevMode = ConfigDevMode.Value;
+            ConfigOptionsMenu =    Config.Bind<KeyCode>("General", "Option Key",  KeyCode.F4, "AAAAAAAAAAAAAAAAAA");
 
             Patch();
             Logger.LogInfo($"{Info.Metadata.Name} has loaded!");
@@ -122,168 +98,11 @@ namespace ChaosMod
         internal GameObject timeBar;
         internal RectTransform textGroup;
         internal AssetBundle assets;
-        internal TextMeshProUGUI creditTxt;
         internal TextMeshProUGUI DebugText;
         internal Image barImg;
+        internal OptionsMenuController options;
         void Start()
         {
-            GameObject canvas = new GameObject("Chaos Controller");
-            UICanvas = canvas.AddComponent<Canvas>();
-            UICanvas.sortingOrder = 999;
-            UICanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            var scaler = canvas.AddComponent<CanvasScaler>();
-            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            canvas.AddComponent<GraphicRaycaster>();
-
-            shaderOverlay = canvas.AddComponent<PostProcessVolume>();
-            /*shaderOverlay.isGlobal = true;
-            shaderOverlay.priority = 1f;
-            shaderOverlay.sharedProfile = ScriptableObject.CreateInstance<PostProcessProfile>();
-
-            var profile = shaderOverlay.sharedProfile;
-            if (!profile.HasSettings<RainbowEffect>())
-            {
-                var rainbow = ScriptableObject.CreateInstance<RainbowEffect>();
-                rainbow.intensity.Override(0.25f);
-                profile.AddSettings(rainbow);
-            }*/
-
-            GameObject yoinky = new GameObject("Audio Sources");
-            yoinky.transform.parent = canvas.transform;
-            yoinky.AddComponent<RectTransform>();
-
-            GameObject spinky = new GameObject("Enemy Sound Source");
-            spinky.transform.parent = yoinky.transform;
-
-            EnemyAS = spinky.AddComponent<AudioSource>();
-            EnemyAS.dopplerLevel = 0f;
-            EnemyAS.volume = 0.75f;
-            EnemyAS.outputAudioMixerGroup = AudioManager.instance.SoundMasterGroup;
-
-            GameObject fuck = new GameObject("Rumble Sound Source");
-            fuck.transform.parent = yoinky.transform;
-            RumbleAS = fuck.AddComponent<AudioSource>();
-            RumbleAS.dopplerLevel = 0f;
-            // RumbleAS.volume = 0.5f;
-            RumbleAS.loop = true;
-            RumbleAS.playOnAwake = false;
-            RumbleAS.outputAudioMixerGroup = AudioManager.instance.SoundMasterGroup;
-
-            GameObject srcObj = new GameObject("Master Sound Source");
-            srcObj.transform.parent = yoinky.transform;
-            AudioSource = srcObj.AddComponent<AudioSource>();
-            AudioSource.dopplerLevel = 0f;
-            AudioSource.playOnAwake = false;
-            AudioSource.outputAudioMixerGroup = AudioManager.instance.SoundMasterGroup;
-
-            GameObject clubObj = new GameObject("Club Music Source");
-            clubObj.transform.parent = yoinky.transform;
-            ClubSource = clubObj.AddComponent<AudioSource>();
-            ClubSource.dopplerLevel = 0f;
-            ClubSource.playOnAwake = false;
-            ClubSource.outputAudioMixerGroup = AudioManager.instance.SoundMasterGroup;
-
-            // ㅅㅂ 모드 만드는거 못해먹겠다
-            // 붐박스 노래 꺼내오기
-            GameObject boombox = Instantiate(Resources.Load<GameObject>("valuables/04 big/Valuable Museum Boombox"), new Vector3(9e9f, 0f, 0f), Quaternion.identity);
-            boombox.SetActive(false);
-            ClubSource.clip = boombox.GetComponent<ValuableBoombox>().soundBoomboxMusic.Sounds[0];
-            ClubSource.loop = true;
-            Destroy(boombox);
-            
-            var reverb = spinky.AddComponent<AudioReverbFilter>();
-            reverb.reverbPreset = AudioReverbPreset.Concerthall;
-            reverb.reverbLevel = 1f;
-            reverb.decayTime = .5f;
-            reverb.enabled = true;
-
-            // 캔버스의 가로, 세로 크기
-            canvasHeight = ((RectTransform)canvas.transform).rect.height;
-            canvasWidth = ((RectTransform)canvas.transform).rect.width;
-            DontDestroyOnLoad(canvas);
-
-            GameObject scoutTF2 = new GameObject("Scout TF2");
-            scoutTF2.transform.parent = canvas.transform;
-            Util.RectTransformFullscreen(scoutTF2.AddComponent<RectTransform>());
-            ThinkFast.scout = scoutTF2.AddComponent<Image>();
-
-            GameObject Text1Obj = new GameObject("Top Text");
-            var uhoh = Text1Obj.AddComponent<RectTransform>();
-            Text1Obj.transform.parent = canvas.transform;
-            Image img1 = Text1Obj.AddComponent<Image>();
-            ThinkFast.text1 = img1.gameObject;
-            Text1Obj.SetActive(false);
-
-            uhoh.anchorMin = new Vector2(.5f, 1f);
-            uhoh.anchorMax = new Vector2(.5f, 1f);
-            uhoh.pivot = new Vector2(.5f, 1f);
-            uhoh.sizeDelta = new Vector2(674, 94.5f);
-            uhoh.anchoredPosition = new Vector2(0f, -40f);
-
-            GameObject Text2Obj = new GameObject("Bottom Text");
-            var uhoh2 = Text2Obj.AddComponent<RectTransform>();
-            Text2Obj.transform.parent = canvas.transform;
-            Image img2 = Text2Obj.AddComponent<Image>();
-            ThinkFast.text2 = img2.gameObject;
-            Text2Obj.SetActive(false);
-
-            uhoh2.anchorMin = new Vector2(.5f, 0f);
-            uhoh2.anchorMax = new Vector2(.5f, 0f);
-            uhoh2.pivot = new Vector2(.5f, 0f);
-            uhoh2.sizeDelta = new Vector2(856, 94.5f);
-            uhoh2.anchoredPosition = new Vector2(0f, 20f);
-
-            GameObject flashObj = new GameObject("Flash Sprite");
-            flashObj.transform.parent = canvas.transform;
-            Util.RectTransformFullscreen(flashObj.AddComponent<RectTransform>());
-            ThinkFast.flash = flashObj.AddComponent<Image>();
-            ThinkFast.flash.color = new Color(1f, 1f, 1f, 0f);
-
-            // 타임 바 만들기
-            timeBar = new GameObject("Time Bar");
-            timeBar.transform.parent = canvas.transform;
-            timeBar.SetActive(false);
-            
-            // 크기가 부모 전체를 꽉 채우도록 설정
-            Util.RectTransformFullscreen(timeBar.AddComponent<RectTransform>());
-
-            GameObject timeBarBG = new GameObject("BG");
-            timeBarBG.transform.parent = timeBar.transform;
-            GameObject timeBarFG = new GameObject("FG");
-            timeBarFG.transform.parent = timeBar.transform;
-
-            Image bgImg = timeBarBG.AddComponent<Image>();
-            bgImg.color = Color.black;
-
-            // 타임바 배경을 화면 위에 위치
-            bgImg.rectTransform.anchorMin = Vector2.zero;
-            bgImg.rectTransform.anchorMax = Vector2.one;
-            bgImg.rectTransform.offsetMin = new Vector2(0, canvasHeight - 30);
-            bgImg.rectTransform.offsetMax = Vector2.zero;
-
-            barImg = timeBarFG.AddComponent<Image>();
-            barImg.color = new Color(ConfigBarColorR.Value / 255f, ConfigBarColorG.Value / 255f, ConfigBarColorB.Value / 255f, 1f);
-
-            // 타임바 전경을 화면 위에 위치, 5픽셀 정도 떨어져서
-            barRect = barImg.rectTransform;
-            barRect.anchorMin = Vector2.zero;
-            barRect.anchorMax = Vector2.one;
-            barRect.offsetMin = new Vector2(0f, canvasHeight - 25);
-            barRect.offsetMax = new Vector2(0f, -5f);
-
-            // 텍스트 그룹 만들기
-            GameObject groupParent = new GameObject("Text Group");
-            groupParent.transform.parent = canvas.transform;
-
-            // 화면의 오른쪽에 위치, 길이는 화면의 1/4정도
-            textGroup = groupParent.AddComponent<RectTransform>();
-            textGroup.anchorMin = Vector2.zero;
-            textGroup.anchorMax = Vector2.one;
-
-            float centerX = canvasWidth / 2;
-            textGroup.offsetMin = new Vector2(centerX + (centerX / 2f), 0f);
-            textGroup.offsetMax = Vector2.zero;
-
             // Assetbundle 로드
             string path = Util.GetPluginDirectory("assets");
             Logger.LogInfo($"에셋 번들을 '{path}'에서 불러옵니다.");
@@ -301,67 +120,94 @@ namespace ChaosMod
                 }
             }
 
-            RumbleAS.clip = assets.LoadAsset<AudioClip>("rumble");
-            RumbleAS.Stop();
+            GameObject UIPrefab = Instantiate(assets.LoadAsset<GameObject>("Chaos Controller"));
+            UICanvas = UIPrefab.GetComponent<Canvas>();
+
+            // shaderOverlay = canvas.AddComponent<PostProcessVolume>();
+            /*shaderOverlay.isGlobal = true;
+            shaderOverlay.priority = 1f;
+            shaderOverlay.sharedProfile = ScriptableObject.CreateInstance<PostProcessProfile>();
+
+            var profile = shaderOverlay.sharedProfile;
+            if (!profile.HasSettings<RainbowEffect>())
+            {
+                var rainbow = ScriptableObject.CreateInstance<RainbowEffect>();
+                rainbow.intensity.Override(0.25f);
+                profile.AddSettings(rainbow);
+            }*/
+
+            EnemyAS = UIPrefab.transform.Find("Audio Source").Find("Enemy Sound Source").GetComponent<AudioSource>();
+            EnemyAS.outputAudioMixerGroup = AudioManager.instance.SoundMasterGroup;
+
+            RumbleAS = UIPrefab.transform.Find("Audio Source").Find("Rumble Sound Source").GetComponent<AudioSource>();
+            RumbleAS.outputAudioMixerGroup = AudioManager.instance.SoundMasterGroup;
+
+            AudioSource = UIPrefab.transform.Find("Audio Source").Find("Master Sound Source").GetComponent<AudioSource>();
+            AudioSource.outputAudioMixerGroup = AudioManager.instance.SoundMasterGroup;
+
+            ClubSource = UIPrefab.transform.Find("Audio Source").Find("Club Music Source").GetComponent<AudioSource>();
+            ClubSource.outputAudioMixerGroup = AudioManager.instance.MusicMasterGroup;
+
+            // ㅅㅂ 모드 만드는거 못해먹겠다
+            // 붐박스 노래 꺼내오기
+            GameObject boombox = Instantiate(Resources.Load<GameObject>("valuables/04 big/Valuable Museum Boombox"), new Vector3(9e9f, 0f, 0f), Quaternion.identity);
+            boombox.SetActive(false);
+            ClubSource.clip = boombox.GetComponent<ValuableBoombox>().soundBoomboxMusic.Sounds[0];
+            Destroy(boombox);
+
+            // 캔버스의 가로, 세로 크기
+            canvasHeight = ((RectTransform)UICanvas.transform).rect.height;
+            canvasWidth = ((RectTransform)UICanvas.transform).rect.width;
+            DontDestroyOnLoad(UICanvas);
+
+            ThinkFast.scout = UIPrefab.transform.Find("Scout TF2").GetComponent<Image>();
+            ThinkFast.text1 = UIPrefab.transform.Find("Upper Text").gameObject;
+            ThinkFast.text2 = UIPrefab.transform.Find("Lower Text").gameObject;
+
+            // ThinkFast.flash = flashObj.AddComponent<Image>();
+            // ThinkFast.flash.color = new Color(1f, 1f, 1f, 0f);
+
+            timeBar = UIPrefab.transform.Find("Time Bar").gameObject;
+
+            barImg = timeBar.transform.Find("FG").GetComponent<Image>();
+            // barImg.color = new Color(ConfigBarColorR.Value / 255f, ConfigBarColorG.Value / 255f, ConfigBarColorB.Value / 255f, 1f);
+
+            barRect = (RectTransform)barImg.transform;
+
+            textGroup = (RectTransform)UIPrefab.transform.Find("Modifier Text Group").transform;
+
+            timeBar.SetActive(false);
+            ThinkFast.scout.gameObject.SetActive(false);
+            ThinkFast.text1.SetActive(false);
+            ThinkFast.text2.SetActive(false);
+
+            ThinkFast.text1.GetComponent<TextMeshProUGUI>().text = Language.GetText("evt_text_think_fast");
+            ThinkFast.text2.GetComponent<TextMeshProUGUI>().text = Language.GetText("evt_text_chucklenuts");
 
             SceneManager.sceneLoaded += OnSceneChange;
             photonViewInited = false;
 
-            img1.sprite = assets.LoadAsset<Sprite>("THINK FAST");
-            img2.sprite = assets.LoadAsset<Sprite>("CHUCKLENUTS");
-
-            ThinkFast.scout.sprite = assets.LoadAsset<Sprite>("scout tf2");
-            scoutTF2.SetActive(false);
-
-            GameObject creditObject = new GameObject("Credit Text");
-            creditObject.transform.parent = canvas.transform;
-            RectTransform rt = creditObject.AddComponent<RectTransform>();
-            rt.anchorMin = Vector2.zero;
-            rt.anchorMax = Vector2.one;
-
-            rt.offsetMin = new Vector2(centerX + (centerX / 2f), 0f);
-            rt.offsetMax = Vector2.zero;
-
-            // 크레딧 텍스트
-            creditTxt = creditObject.AddComponent<TextMeshProUGUI>();
-            creditTxt.font = pretendard;
-            creditTxt.alignment = TextAlignmentOptions.Center;
-            if (IsDebug)
-                creditTxt.text += "\n<size=30>디버그 모드 활성화됨</size>";
-            creditObject.SetActive(false);
-
+            DebugText = UIPrefab.transform.Find("Debug Text").GetComponent<TextMeshProUGUI>();
             // 디버깅 전용 텍스트
             if (IsDebug)
             {
-                GameObject textObject = new GameObject("Debug Text");
-                textObject.transform.parent = canvas.transform;
-
-                // 화면에서 100만큼 작음
-                Vector2 offset = Vector2.one * 100f;
-
-                rt = textObject.AddComponent<RectTransform>();
-                rt.anchorMin = Vector2.zero;
-                rt.anchorMax = Vector2.one;
-                rt.offsetMin = offset;
-                rt.offsetMax = offset * -1f;
-
-                DebugText = textObject.AddComponent<TextMeshProUGUI>();
                 DebugText.font = pretendard;
                 DebugText.text = "";
                 DebugText.fontSize = 20;
             }
+            DebugText.gameObject.SetActive(IsDebug);
 
-            Exclude_Modifiers.Clear();
-            Modifiers.Init(mod =>
-            {
-                var category = Language.GetText("options_lvl_evts");
-                var config = Config.Bind<bool>(category, mod.GetName(), true, new ConfigDescription(mod.GetDesc()));
-                config.SettingChanged += (sender, value) =>
-                {
-                    OnEventSettingChanged(config, mod);
-                };
-                OnEventSettingChanged(config, mod);
-            });
+            // fuck.....
+            GameObject settings = Instantiate(assets.LoadAsset<GameObject>("Settings"), UICanvas.transform, false);
+            options = settings.AddComponent<OptionsMenuController>();
+            FakeCursor = settings.transform.Find("Mouse Cursor").GetComponent<RawImage>();
+            var fuck = GameObject.Find("Cursor").transform.GetChild(0).GetComponent<RawImage>();
+            FakeCursor.texture = fuck.texture;
+            FakeCursor.material = fuck.material;
+            FakeCursor.gameObject.SetActive(false);
+            FakeCursor.rectTransform.sizeDelta = new Vector2(128f/2f, 111f/2f);
+            FakeCursor.raycastTarget = false;
+            FakeCursor.rectTransform.pivot = new Vector2(0.2f, 0.8f);
 
             if (IsDebug)
                 Logger.LogInfo("프리팹을 풀에 추가하는 중...");
@@ -373,17 +219,213 @@ namespace ChaosMod
             }
 
             Logger.LogMessage("Setup Done. '-'");
+
+            StartCoroutine(MakeOptions());
         } // void Start()
 
-        void OnEventSettingChanged(ConfigEntry<bool> config, Modifier mod)
-        {
-            if (Exclude_Modifiers.ContainsKey(config.Definition.Key))
-                Exclude_Modifiers[mod.GetName()] = !config.Value;
-            else
-                Exclude_Modifiers.Add(mod.GetName(), !config.Value);
+        private RawImage FakeCursor;
 
-            if (IsDebug)
-                Logger.LogInfo($"이벤트 상태 변경: {mod.GetName()} => {config.Value}");
+        // i fucking hate unity
+        IEnumerator MakeOptions()
+        {
+            yield return new WaitForSeconds(0.1f);
+            var options_general = Language.GetText("options_general");
+
+            string timebarColor = Language.GetText("options_gauge_color");
+            string dizz = Language.GetText("options_dizzyness");
+            string family = Language.GetText("options_family_friendly");
+            string dev = Language.GetText("options_dev_mode");
+            options.AddOption(options_general, new List<OptionItem>
+            {
+                new OptionItem(timebarColor, OptionType.Color),
+                new OptionItem(dizz, OptionType.Checkbox),
+                new OptionItem(family, OptionType.Checkbox),
+                new OptionItem(dev, OptionType.Checkbox),
+            });
+
+            options.SetValue($"{options_general}:{timebarColor}", new Color(144f/255f, 0, 0), false);
+            options.SetValue($"{options_general}:{dizz}", false, false);
+            options.SetValue($"{options_general}:{family}", false, false);
+            options.SetValue($"{options_general}:{dev}", false, false);
+
+            var options_lvl_evts = Language.GetText("options_lvl_evts");
+            string evt_enabled = Language.GetText("options_evts_enabled");
+            string evt_chance = Language.GetText("options_evts_chance");
+            string evt_duration = Language.GetText("options_evts_range");
+            options.AddCategory(options_lvl_evts);
+            Modifiers.Init(mod =>
+            {
+                var items = new List<OptionItem> {
+                    new OptionItem(evt_enabled, OptionType.Checkbox),
+                    new OptionItem(evt_chance, OptionType.Value, 0f, 100f),
+                };
+
+                if (!mod.isOnce)
+                {
+                    items.Add(new OptionItem(evt_duration, OptionType.Range, 0, float.MaxValue));
+                }
+
+                options.AddOption(mod.GetName(), items);
+                options.SetValue($"{mod.GetName()}:{evt_enabled}", mod.enabled, false);
+                options.SetValue($"{mod.GetName()}:{evt_chance}", mod.options.chance * 100f, false);
+                if (!mod.isOnce)
+                    options.SetValue($"{mod.GetName()}:{evt_duration}", new float[] { mod.minTimer, mod.maxTimer }, false);
+            });
+            LoadAndApplySettings();
+            options.onValueChanged.AddListener((OptionType type, string key, object value) => {
+                if (key.StartsWith(options_general)) {
+                    string fuckSwitch = key.Substring(options_general.Length + 1);
+                    if (fuckSwitch == timebarColor) {
+                        Color col = (Color)value;
+                        barImg.color = col;
+                        hasChanges = true;
+                    } else if (fuckSwitch == dizz) {
+                        dizzyness = (bool)value;
+                        hasChanges = true;
+                    } else if (fuckSwitch == family) {
+                        familyFriendly = (bool)value;
+                        hasChanges = true;
+                    } else if (fuckSwitch == dev) {
+                        DevMode = (bool)value;
+                        hasChanges = true;
+                    }
+                } else {
+                    foreach (Modifier mod in Modifiers.Events)
+                    {
+                        string name = mod.GetName();
+                        if (key.StartsWith(name)) {
+                            string sub = key.Substring(name.Length + 1);
+                            if (sub == evt_enabled) {
+                                mod.enabled = (bool)value;
+                            } else if (sub == evt_chance) {
+                                mod.options.chance = (float)value / 100f;
+                            } else if (sub == evt_duration) {
+                                float[] array = (float[])value;
+                                mod.minTimer = array[0];
+                                mod.maxTimer = array[1];
+                            }
+                            hasChanges = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (hasChanges && IsDebug)
+                    Logger.LogInfo("User has changed something");
+            });
+            Logger.LogInfo("Settings are created!");
+        }
+
+        private const string CONFIG_HEADER = "CHAOS_MOD_CONFIG";
+        private const int CONFIG_VERSION = 1;
+        void LoadAndApplySettings()
+        {
+            string path = Util.GetPluginDirectory("settings.bytes");
+            if (!File.Exists(path))
+            {
+                Logger.LogWarning("Settings File not found. Making a new one.");
+                File.WriteAllText(path, "");
+                return;
+            }
+
+            using var fs = new FileStream(path, FileMode.Open);
+            using var br = new BinaryReader(fs);
+
+            try
+            {
+                if (br.ReadString() != CONFIG_HEADER)
+                {
+                    Logger.LogError(Language.GetText("exception_config_invaild_header"));
+                    return;
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e.GetBaseException() + ": " + e.Message + "\n" + e.StackTrace);
+                if (e.GetBaseException() is EndOfStreamException)
+                {
+                    Logger.LogMessage(Language.GetText("exception_endofstream_config_1"));
+                    Logger.LogMessage(Language.GetText("exception_endofstream_config_2"));
+                }
+                return;
+            }
+
+            if (br.ReadInt32() > CONFIG_VERSION) { // if file version is higher, we cannot parse it.
+                Logger.LogError(Language.GetText("exception_config_version_match"));
+                return;
+            }
+
+            for (int i = 0; i < br.ReadInt32(); i++)
+            {
+                string key = br.ReadString();
+                string type = br.ReadString();
+                switch (type)
+                {
+                    case "bool":
+                        {
+                            options.SetValue(key, br.ReadBoolean(), true);
+                            break;
+                        }
+                    case "float":
+                        {
+                            options.SetValue(key, br.ReadSingle(), true);
+                            break;
+                        }
+                    case "range":
+                        {
+                            options.SetValue(key, new float[] { br.ReadSingle(), br.ReadSingle() }, true);
+                            break;
+                        }
+                    case "color":
+                        {
+                            Color col = new Color(
+                                br.ReadSingle(),
+                                br.ReadSingle(),
+                                br.ReadSingle()
+                            );
+                            options.SetValue(key, col, true);
+                            break;
+                        }
+                }
+            }
+
+            
+        }
+
+        void SaveSettings()
+        {
+            Logger.LogInfo("Trying to save settings...");
+            using var fs = new FileStream(Util.GetPluginDirectory("settings.bytes"), FileMode.Create);
+            using var bw = new BinaryWriter(fs);
+
+            bw.Write(CONFIG_HEADER);
+            bw.Write(CONFIG_VERSION);
+            bw.Write(options.datas.Count);
+
+            foreach (var item in options.datas)
+            {
+                bw.Write(item.Key);
+                // FUCKKK
+                if (item.Value is bool bChecked) {
+                    bw.Write("bool");
+                    bw.Write(bChecked);
+                } else if (item.Value is float fValue) {
+                    bw.Write("float");
+                    bw.Write(fValue);
+                } else if (item.Value is float[] arr) {
+                    bw.Write("range");
+                    bw.Write(arr[0]);
+                    bw.Write(arr[1]);
+                } else if (item.Value is Color col) {
+                    bw.Write("color");
+                    bw.Write(col.r);
+                    bw.Write(col.g);
+                    bw.Write(col.b);
+                }
+            }
+
+            bw.Flush();
+            Logger.LogInfo("Done!");
         }
 
         internal bool photonViewInited = false;
@@ -397,6 +439,9 @@ namespace ChaosMod
 
         internal AdManager adViewer;
         internal GameObject adObject;
+        internal bool dizzyness = true;
+        internal bool familyFriendly = false;
+        private bool hasChanges = false;
 
         internal bool InitPhotonView()
         {
@@ -449,7 +494,7 @@ namespace ChaosMod
         // offsetMax = (오른쪽, 상단)
 
         // 텍스트 높이
-        float text_height = 55f;
+        float text_height = 40f;
 
         // 프리텐다드 폰트 에셋
         internal TMP_FontAsset pretendard;
@@ -591,12 +636,32 @@ namespace ChaosMod
             return false;
         }
 
-        float startTimer = 0f;
         bool didReset = false;
         private void Update()
         {
             if (timeBar.activeSelf != Generated)
                 timeBar.SetActive(Generated);
+
+            if (Input.GetKeyDown(ConfigOptionsMenu.Value))
+            {
+                if (options.isShown)
+                {
+                    FakeCursor.gameObject.SetActive(false);
+                    options.Hide();
+                    if (hasChanges)
+                    {
+                        hasChanges = false;
+                        SaveSettings();
+                    }
+                }
+                else
+                {
+                    options.Show();
+                    FakeCursor.gameObject.SetActive(true);
+                }
+            }
+            FakeCursor.rectTransform.position = Input.mousePosition;
+
             if (!Generated)
             {
                 // 레벨에 들어가있지 않으면 텍스트 전체 제거
@@ -618,9 +683,6 @@ namespace ChaosMod
                     eventTimerBars.Clear();
                 }
                 photonViewInited = false;
-                startTimer = 0f;
-                if (creditTxt.gameObject.activeSelf)
-                    creditTxt.gameObject.SetActive(false);
 
                 if (IsDebug)
                     DebugText.text = "";
@@ -628,10 +690,10 @@ namespace ChaosMod
                 if (!didReset)
                 {
                     didReset = true;
-                    foreach (Modifier mod in Modifiers.Events)
-                    {
-                        mod.options.chance = 1f;
-                    }
+                    //foreach (Modifier mod in Modifiers.Events)
+                    //{
+                    //    mod.options.chance = 1f;
+                    //}
                     ModVars.Reset();
                 }
 
@@ -646,42 +708,31 @@ namespace ChaosMod
                 photonViewInited = InitPhotonView();
             }
 
-            if (carObject == null || car == null)
-            {
-                var car_assets = CarCrash.car_assets;
-                if (!GameManager.Multiplayer())
-                {
-                    carObject = Instantiate(car_assets.LoadAsset<GameObject>("Killer Joe"), Vector3.zero, Quaternion.identity);
-                    car = carObject.AddComponent<CrazyCarAIScript>();
-                    car.honk = car_assets.LoadAsset<AudioClip>("car honk");
-                    car.exp_sprites = car_assets.LoadAssetWithSubAssets<Sprite>("spr_realisticexplosion").ToList();
-                }
-                else if (controller != null && controller.view != null && SemiFunc.IsMasterClient())
-                {
-                    PhotonNetwork.Instantiate("Killer Joe", Vector3.zero, Quaternion.identity);
+            // 개 병신새끼야 나가 뒤져 시발 아주 잘도 태어났네
+            //if (carObject == null || car == null)
+            //{
+            //    var car_assets = CarCrash.car_assets;
+            //    if (!GameManager.Multiplayer())
+            //    {
+            //        carObject = Instantiate(car_assets.LoadAsset<GameObject>("Killer Joe"), Vector3.zero, Quaternion.identity);
+            //        car = carObject.AddComponent<CrazyCarAIScript>();
+            //        car.honk = car_assets.LoadAsset<AudioClip>("car honk");
+            //        car.exp_sprites = car_assets.LoadAssetWithSubAssets<Sprite>("spr_realisticexplosion").ToList();
+            //    }
+            //    else if (controller != null && controller.view != null && SemiFunc.IsMasterClient())
+            //    {
+            //        PhotonNetwork.Instantiate("Killer Joe", Vector3.zero, Quaternion.identity);
                     
-                }
+            //    }
                 
-                // add scripts to all clients!!!!
-                if (SemiFunc.IsMultiplayer())
-                {
-                    controller.FindCarRPC();
-                }
-            } else if (!car.setupDone) {
-                car.Start();
-            }
-
-            if (startTimer < 5f)
-            {
-                startTimer += Time.unscaledDeltaTime;
-                if (!creditTxt.gameObject.activeSelf)
-                    creditTxt.gameObject.SetActive(true);
-            }
-            else
-            {
-                if (creditTxt.gameObject.activeSelf)
-                    creditTxt.gameObject.SetActive(false);
-            }
+            //    // add scripts to all clients!!!!
+            //    if (SemiFunc.IsMultiplayer())
+            //    {
+            //        controller.FindCarRPC();
+            //    }
+            //} else if (!car.setupDone) {
+            //    car.Start();
+            //}
 
             barRect.offsetMax = new Vector2(SemiFunc.Remap(0f, MaxEventTimer, 0f, -canvasWidth, controller.eventTimer), barRect.offsetMax.y);
 

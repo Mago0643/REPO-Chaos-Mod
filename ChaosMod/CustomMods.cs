@@ -18,6 +18,7 @@ namespace ChaosMod
         {
             this.count = count;
             isOnce = true;
+            ID = 1;
 
             monsters = Resources.LoadAll<GameObject>(monsterPrefabPath);
         }
@@ -71,6 +72,7 @@ namespace ChaosMod
         public Tumble(): base("evt_tumble", "evt_tumble_desc")
         {
             isOnce = true;
+            ID = 2;
         }
 
         public override void Start()
@@ -101,6 +103,7 @@ namespace ChaosMod
             minTimer = 20f;
             maxTimer = 25f;
             this.mult = mult;
+            ID = 3;
         }
 
         public override string GetName()
@@ -144,6 +147,7 @@ namespace ChaosMod
         public KillAllMonsters(): base("evt_kill_all_monsters", "evt_kill_all_monsters_desc")
         {
             isOnce = true;
+            ID = 4;
         }
 
         public override void Start()
@@ -167,12 +171,13 @@ namespace ChaosMod
         {
             minTimer = 20f;
             maxTimer = 30f;
+            ID = 5;
         }
 
         public override void Update()
         {
             base.Update();
-            CameraZoom.Instance.OverrideZoomSet(ChaosMod.Instance.ConfigDizzyness.Value ? 150f : 90f, .5f, 0.5f, 1f, ChaosMod.Instance.gameObject, 10);
+            CameraZoom.Instance.OverrideZoomSet(ChaosMod.Instance.dizzyness ? 150f : 90f, .5f, 0.5f, 1f, ChaosMod.Instance.gameObject, 10);
         }
 
         public override Modifier Clone()
@@ -186,6 +191,7 @@ namespace ChaosMod
         public BrokeAllDoor(): base("evt_break_all_door", "evt_break_all_door_desc")
         {
             isOnce = true;
+            ID = 6;
         }
 
         public override void Start()
@@ -234,6 +240,7 @@ namespace ChaosMod
         public MonsterSound(): base("evt_hallucination", "evt_hallucination_desc")
         {
             isOnce = true;
+            ID = 7;
 
             // might change this later
             
@@ -253,7 +260,7 @@ namespace ChaosMod
         {
             base.Start();
 
-            ((MonsterSound)Instance).options.chance -= 0.05f;
+            // ((MonsterSound)Instance).options.chance -= 0.05f;
             ChaosMod.Instance.EnemyAS.PlayOneShot(sounds[Random.Range(1, sounds.Count)], 0.5f);
         }
 
@@ -272,6 +279,7 @@ namespace ChaosMod
             name = (amount > 0 ? "+" : "") + $"{amount} HP";
             isOnce = true;
             options.oncePerLevel = true;
+            ID = 8;
         }
 
         public override string GetName()
@@ -317,6 +325,7 @@ namespace ChaosMod
         {
             minTimer = 20f;
             maxTimer = 35f;
+            ID = 9;
         }
 
         public override void Update()
@@ -347,6 +356,7 @@ namespace ChaosMod
         {
             minTimer = 20f;
             maxTimer = 35f;
+            ID = 10;
         }
 
         public override void Update()
@@ -377,6 +387,7 @@ namespace ChaosMod
         {
             minTimer = 30f;
             maxTimer = 60f;
+            ID = 11;
         }
 
         public static GameObject post;
@@ -406,6 +417,7 @@ namespace ChaosMod
         {
             isOnce = true;
             options.oncePerLevel = true;
+            ID = 12;
         }
 
         public override void Start()
@@ -439,13 +451,14 @@ namespace ChaosMod
     public class DuckMadness: Modifier
     {
         private string rubberDuckPath = "items/Item Rubber Duck";
-        private float chanceBefore = 0f;
         private GameObject rubberDuckPrefab;
 
         public DuckMadness(): base("evt_crazy_ducks", "evt_crazy_ducks_desc")
         {
             minTimer = 25f;
             maxTimer = 30f;
+
+            ID = 13;
 
             rubberDuckPrefab = Resources.Load<GameObject>(rubberDuckPath);
             if (rubberDuckPrefab == null)
@@ -458,8 +471,8 @@ namespace ChaosMod
             base.Start();
             if (!SemiFunc.IsMasterClientOrSingleplayer()) return;
 
-            chanceBefore = ((DuckMadness)Instance).options.chance;
-            ((DuckMadness)Instance).options.chance = 0f;
+            if (!Modifiers.Excludes.Contains(Instance))
+                Modifiers.Excludes.Add(Instance);
 
             var players = SemiFunc.PlayerGetAll();
             foreach (var player in players)
@@ -539,46 +552,14 @@ namespace ChaosMod
                     Object.Destroy(obj);
             }
             ((DuckMadness)Instance).ducks.Clear();
+
+            if (Modifiers.Excludes.Contains(Instance))
+                Modifiers.Excludes.Remove(Instance);
         }
 
         public override Modifier Clone()
         {
             return new DuckMadness() { isClone = true, Instance = this };
-        }
-    }
-
-    public class JumpJumpJump: Modifier
-    {
-        public JumpJumpJump(): base("점핑! 예!", "플레이어가 1초마다 점프합니다.")
-        {
-            minTimer = 20f;
-            maxTimer = 25f;
-        }
-
-        public override Modifier Clone()
-        {
-            return new JumpJumpJump() { isClone = true, Instance = this };
-        }
-
-        float jumpTimer = 1f;
-        public override void Update()
-        {
-            base.Update();
-
-            // if (!SemiFunc.IsMasterClientOrSingleplayer()) return;
-
-            if (jumpTimer > 0f)
-                jumpTimer -= Time.deltaTime;
-            else
-            {
-                jumpTimer = 1f;
-                var players = SemiFunc.PlayerGetAll();
-                foreach (var plr in players)
-                {
-                    plr.Jump(true);
-                }
-                CameraJump.instance.Jump();
-            }
         }
     }
 
@@ -608,10 +589,11 @@ namespace ChaosMod
             "This is the part where he kills you!", "CHICKEN JOCKEY", "skibidi", "I. AM. STEVE.", "Thanks for playing my mod!",
         };
 
-        public SayRandomThnings(): base("evt_say_random_thing_desc", "evt_say_random_thing_desc")
+        public SayRandomThnings(): base("evt_say_random_thing", "evt_say_random_thing_desc")
         {
             isOnce = true;
             options.multiplayerOnly = true;
+            ID = 14;
         }
 
         public override void Start()
@@ -620,7 +602,7 @@ namespace ChaosMod
             ChatManager chat = ChatManager.instance;
 
             string speech = tries[Random.Range(0, tries.Length)];
-            if (ChaosMod.Instance.ConfigFamilyFriendly.Value)
+            if (ChaosMod.Instance.familyFriendly)
             {
                 string[] cussWords = { "fuck", "fucking", "suck", "bitch", "idiot", "kill" };
                 foreach (string word in cussWords)
@@ -648,6 +630,7 @@ namespace ChaosMod
         {
             minTimer = 15f;
             maxTimer = 20f;
+            ID = 15;
         }
 
         public override Modifier Clone()
@@ -658,7 +641,7 @@ namespace ChaosMod
         public override void Start()
         {
             base.Start();
-            if (!ChaosMod.Instance.ConfigDizzyness.Value)
+            if (!ChaosMod.Instance.dizzyness)
                 return;
 
             // ChaosMod.Instance.StartCoroutine(AudioFadeIn());
@@ -669,7 +652,7 @@ namespace ChaosMod
         public override void Update()
         {
             base.Update();
-            if (!ChaosMod.Instance.ConfigDizzyness.Value)
+            if (!ChaosMod.Instance.dizzyness)
                 return;
 
             GameDirector.instance.CameraShake.Shake(2f, .5f);
@@ -679,7 +662,7 @@ namespace ChaosMod
         public override void OnFinished()
         {
             base.OnFinished();
-            if (!ChaosMod.Instance.ConfigDizzyness.Value)
+            if (!ChaosMod.Instance.dizzyness)
                 return;
 
             ChaosMod.Instance.StartCoroutine(AudioFadeOut());
@@ -728,6 +711,7 @@ namespace ChaosMod
         {
             isOnce = true;
             this.mult = mult;
+            ID = 16;
         }
 
         public override string GetName()
@@ -785,6 +769,7 @@ namespace ChaosMod
         {
             minTimer = 20f;
             maxTimer = 40f;
+            ID = 17;
         }
 
         public override Modifier Clone()
@@ -817,6 +802,7 @@ namespace ChaosMod
         {
             minTimer = 60f;
             maxTimer = 120f;
+            ID = 18;
         }
 
         public override Modifier Clone()
@@ -824,7 +810,6 @@ namespace ChaosMod
             var sex = new FriendlyMonsters();
             sex.isClone = true;
             sex.Instance = this;
-            sex.options.chance = options.chance;
             return sex;
         }
 
@@ -851,6 +836,7 @@ namespace ChaosMod
         {
             minTimer = 20f;
             maxTimer = 40f;
+            ID = 19;
         }
 
         public override void Update()
@@ -888,6 +874,7 @@ namespace ChaosMod
 
             options.multiplayerOnly = true;
             this.pitch = pitch;
+            ID = 20;
         }
 
         public override Modifier Clone()
@@ -921,6 +908,7 @@ namespace ChaosMod
         {
             minTimer = 40f;
             maxTimer = 70f;
+            ID = 21;
         }
 
         public override void Update()
@@ -946,6 +934,7 @@ namespace ChaosMod
             minTimer = 30f;
             maxTimer = 42.5f;
             options.multiplayerOnly = true;
+            ID = 22;
         }
 
         public override void Update()
@@ -968,6 +957,7 @@ namespace ChaosMod
     {
         public ReviveAllPlayers(): base("evt_revive_all", "evt_revive_all_desc")
         {
+            ID = 23;
             isOnce = true;
         }
 
@@ -999,6 +989,7 @@ namespace ChaosMod
         {
             isOnce = true;
             options.oncePerLevel = true;
+            ID = 24;
         }
 
         public override void Start()
@@ -1020,6 +1011,7 @@ namespace ChaosMod
         {
             minTimer = 20f;
             maxTimer = 40f;
+            ID = 25;
         }
 
         public AmbientMode ogAmbientMode;
@@ -1033,7 +1025,8 @@ namespace ChaosMod
             light.ogAmbientMode = RenderSettings.ambientMode;
             light.ogAmbientLight = RenderSettings.ambientLight;
 
-            Instance.options.chance = 0f;
+            if (!Modifiers.Excludes.Contains(Instance))
+                Modifiers.Excludes.Add(Instance);
         }
 
         public override void Update()
@@ -1054,7 +1047,8 @@ namespace ChaosMod
             RenderSettings.ambientLight = light.ogAmbientLight;
             RenderSettings.fog = true;
 
-            Instance.options.chance = 1f;
+            if (Modifiers.Excludes.Contains(Instance))
+                Modifiers.Excludes.Remove(Instance);
         }
 
         public override Modifier Clone()
@@ -1063,18 +1057,7 @@ namespace ChaosMod
         }
     }
 
-    // Driving in my car, right after a beer
-    // Hey that bump.. is shaped like a deer?
-    // D U I ?
-    // How about you die?
-    // I'll go hundred miles!!
-    // an hour
-    // Little do you know, i filled up on gas.
-    // Imma get your fountain making ass!
-    // Pulverize this ----!!
-    // with MY BERGUNTRUCK!!
-    // It seems like you have no luck.
-    // TRUCK(LUCK)!!
+    // 이것도 지금 생각해보면 많이 짜증남
     public class CarCrash: Modifier
     {
         public static AssetBundle car_assets;
@@ -1084,6 +1067,7 @@ namespace ChaosMod
             options.singleplayerOnly = true;
             minTimer = 120f;
             maxTimer = 180f;
+            ID = 26;
             if (car_assets == null)
             {
                 car_assets = AssetBundle.LoadFromFile(Util.GetPluginDirectory("car_assets"));
@@ -1122,6 +1106,7 @@ namespace ChaosMod
         {
             minTimer = 60f;
             maxTimer = 120f;
+            ID = 27;
         }
 
         public override void Update()
@@ -1185,6 +1170,7 @@ namespace ChaosMod
         {
             isOnce = true;
             options.oncePerLevel = true;
+            ID = 28;
 
             StunItemPrefab = Resources.Load<GameObject>(StunItemPath);
         }
@@ -1279,6 +1265,7 @@ namespace ChaosMod
         AudioSource src;
         public ClubMood(): base("evt_club_mood", "evt_club_mood_desc")
         {
+            ID = 29;
             float tempBPS = 60f / BPM;
 
             while (minTimer < 60f)
@@ -1382,7 +1369,7 @@ namespace ChaosMod
                 }
                 lastColor = curColor;
 
-                fov = ChaosMod.Instance.ConfigDizzyness.Value ? baseFOV - 5f : baseFOV - 2.5f;
+                fov = ChaosMod.Instance.dizzyness ? baseFOV - 5f : baseFOV - 2.5f;
             }
             RenderSettings.ambientLight = curColor;
 
@@ -1512,7 +1499,7 @@ namespace ChaosMod
                 }
             }
 
-            if (!ChaosMod.Instance.ConfigDizzyness.Value)
+            if (!ChaosMod.Instance.dizzyness)
                 return;
 
             GameDirector.instance.CameraShake.Shake(2f, .5f);
@@ -1533,6 +1520,7 @@ namespace ChaosMod
             this.mult = mult;
             minTimer = 30f;
             maxTimer = 60f;
+            ID = 30;
         }
 
         public override string GetName()
@@ -1582,6 +1570,7 @@ namespace ChaosMod
             this.mult = mult;
             minTimer = 30f;
             maxTimer = 60f;
+            ID = 31;
         }
 
         public override string GetName()
@@ -1621,6 +1610,36 @@ namespace ChaosMod
         public override Modifier Clone()
         {
             return new TimeMult(mult) { isClone = true, Instance = this };
+        }
+    }
+
+    public class OilFloor: Modifier
+    {
+        public OilFloor(): base("evt_oil_floor", "evt_oil_floor_desc")
+        {
+            minTimer = 40f;
+            maxTimer = 120f;
+            ID = 32;
+        }
+
+        private List<PlayerAvatar> players = new List<PlayerAvatar>();
+        public override void Start()
+        {
+            players = SemiFunc.PlayerGetAll();
+
+            base.Start();
+        }
+
+        public override void Update()
+        {
+            foreach (PlayerAvatar plr in players) {
+                ChaosMod.Logger.LogInfo(plr.GetComponent<Rigidbody>().drag);
+            }
+        }
+
+        public override Modifier Clone()
+        {
+            return new OilFloor { Instance = this, isClone = true }; 
         }
     }
 }

@@ -181,7 +181,7 @@ namespace ChaosMod
         {
             if (GameManager.Multiplayer())
             {
-                int familyfriendly = ChaosMod.Instance.ConfigFamilyFriendly.Value ? 1 : 0;
+                int familyfriendly = ChaosMod.Instance.familyFriendly ? 1 : 0;
 
                 /*yapping = true;
                 ChatManager.instance.PossessChatScheduleStart(0x7FFFFFFF);

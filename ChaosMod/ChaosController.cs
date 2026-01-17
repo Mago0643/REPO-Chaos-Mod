@@ -46,6 +46,8 @@ namespace ChaosMod
         {
             // if (GameManager.Multiplayer() && !info.Sender.IsMasterClient) return;
             var array = Modifiers.Events;
+            //if (Modifiers.DebugEvents.Count > 0)
+            //    array = Modifiers.DebugEvents;
             if (SemiFunc.RunIsShop())
                 array = Modifiers.ShopEvents;
             if (!(eventIndex >= 0 && eventIndex < array.Count)) return;
@@ -83,8 +85,14 @@ namespace ChaosMod
                     Modifier tempMod = null;
                     if (SemiFunc.RunIsLevel())
                     {
-                        modIndex = Random.Range(0, Modifiers.Events.Count);
-                        tempMod = Modifiers.Events[modIndex];
+                        //if (Modifiers.DebugEvents.Count > 0)
+                        //{
+                        //    modIndex = Random.Range(0, Modifiers.DebugEvents.Count);
+                        //    tempMod = Modifiers.DebugEvents[modIndex];
+                        //} else {
+                            modIndex = Random.Range(0, Modifiers.Events.Count);
+                            tempMod = Modifiers.Events[modIndex];
+                        //}
                     } /*else if (SemiFunc.RunIsShop()) {
                         modIndex = Random.Range(0, Modifiers.ShopEvents.Count);
                         tempMod = Modifiers.ShopEvents[modIndex];
@@ -95,7 +103,7 @@ namespace ChaosMod
                     bool hasTimerDoneOrIsOnce = tempMod.isOnce || tempMod.timerSelf <= 0f;
                     bool isMultiplayerOnly =  tempMod.Instance.options.multiplayerOnly;
                     bool isSingleplayerOnly = tempMod.Instance.options.singleplayerOnly;
-                    bool excludedOptions = ChaosMod.Instance.Exclude_Modifiers[tempMod.GetName()];
+                    bool excludedOptions = tempMod.enabled;
                     bool type = true;
                     if ((isMultiplayerOnly && !GameManager.Multiplayer()) || (isSingleplayerOnly && GameManager.Multiplayer()))
                         type = false;
@@ -103,7 +111,7 @@ namespace ChaosMod
                     if (ChaosMod.IsDebug)
                         print($"!isExcludedMod: {!isExcludedMod} && chanceChoosen: {chanceChoosen} && hasTimerDoneOrIsOnce: {hasTimerDoneOrIsOnce} && isMultiplayerOnly: {isMultiplayerOnly} && !excludeOptions: {!excludedOptions}");
 
-                    if (!isExcludedMod && chanceChoosen && hasTimerDoneOrIsOnce && type && !excludedOptions)
+                    if (!isExcludedMod && chanceChoosen && hasTimerDoneOrIsOnce && type && excludedOptions)
                     {
                         if (!tempMod.isOnce)
                         {
@@ -282,28 +290,28 @@ namespace ChaosMod
         }
 
         // -- Custom Mod Thingie --
-        IEnumerator FindCar()
-        {
-            while (ChaosMod.Instance.carObject == null)
-            {
-                ChaosMod.Instance.carObject = GameObject.Find("Killer Joe(Clone)");
-                yield return null;
-            }
+        //IEnumerator FindCar()
+        //{
+        //    while (ChaosMod.Instance.carObject == null)
+        //    {
+        //        ChaosMod.Instance.carObject = GameObject.Find("Killer Joe(Clone)");
+        //        yield return null;
+        //    }
 
-            var car_assets = CarCrash.car_assets;
-            ChaosMod.Instance.car = ChaosMod.Instance.carObject.AddComponent<CrazyCarAIScript>();
-            ChaosMod.Instance.car.honk = car_assets.LoadAsset<AudioClip>("car honk");
-            ChaosMod.Instance.car.exp_sprites = car_assets.LoadAssetWithSubAssets<Sprite>("spr_realisticexplosion").ToList();
+        //    var car_assets = CarCrash.car_assets;
+        //    ChaosMod.Instance.car = ChaosMod.Instance.carObject.AddComponent<CrazyCarAIScript>();
+        //    ChaosMod.Instance.car.honk = car_assets.LoadAsset<AudioClip>("car honk");
+        //    ChaosMod.Instance.car.exp_sprites = car_assets.LoadAssetWithSubAssets<Sprite>("spr_realisticexplosion").ToList();
 
-            if (ChaosMod.IsDebug)
-                ChaosMod.Logger.LogMessage("Car Setup is done!");
-        }
+        //    if (ChaosMod.IsDebug)
+        //        ChaosMod.Logger.LogMessage("Car Setup is done!");
+        //}
 
-        [PunRPC]
-        public void FindCarRPC()
-        {
-            StartCoroutine(FindCar());
-        }
+        //[PunRPC]
+        //public void FindCarRPC()
+        //{
+        //    StartCoroutine(FindCar());
+        //}
 
         [PunRPC]
         internal void GrenadeStunExplosionRPC(int viewID)

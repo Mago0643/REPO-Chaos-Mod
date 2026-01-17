@@ -1,6 +1,7 @@
 ﻿using Photon.Pun;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using UnityEngine;
 
@@ -10,6 +11,7 @@ namespace ChaosMod
     {
         public static readonly List<Modifier> Events = new List<Modifier>();
         public static readonly List<Modifier> ShopEvents = new List<Modifier>();
+        public static readonly List<Modifier> DebugEvents = new List<Modifier>(); // 개발자 모드에서는 이벤트가 이걸로 고정
 
         public static void Init(Action<Modifier> callback = null)
         {
@@ -21,7 +23,7 @@ namespace ChaosMod
                 new GameSpeed(2f),
                 new GameSpeed(0.75f),
                 new BrokeAllDoor(),                        // 모든 미닫이문 부수기
-                new MonsterSound(),                       // 환청
+                new MonsterSound(),                        // 환청
                 new AddHealth(100),                        // +100 HP
                 new AddHealth(50),                         // +50 HP
                 new AddHealth(0),                          // 0 HP
@@ -44,22 +46,20 @@ namespace ChaosMod
                 new NoJumpAndSprint(),                     // 달리기 & 점프 없음
                 new EyeBig(),                              // 동공 확장
                 new DisableLighting(),                     // 전역 조명 비활성화
-                new CarCrash(false),                       // 올해 최고의 운전사
+                // new CarCrash(false),                       // 올해 최고의 운전사
                 new SpawnMonster(2),                       // 몬스터 2마리 소환
                 new SpawnMonster(4),                       // 몬스터 4마리 소환
                 new NoGravity(),                           // 중력 없음
                 new ThinkFast(),                           // think fast ---
-                // new ForcePause(),                       // 일시정지
                 new ClubMood(),                            // 클럽 분위기
-                // new GravityMult(-1f),                   // 중력 반대로
                 new GravityMult(0.25f),                    // 중력 0.25배
                 new GravityMult(5f),                       // 중력 5배
                 new TimeMult(2f),                          // 타이머 2배
                 new TimeMult(0.5f),                        // 타이머 0.5배
                 new TimeMult(4f),                          // 타이머 4배
+                // new OilFloor(),
                 // 모든 플레이어가 무적
                 // 모든 몬스터가 무적
-                // CRT
                 // 술 취함
             };
 
@@ -69,6 +69,25 @@ namespace ChaosMod
                     callback(mod);
                 Events.Add(mod);
             }
+
+            // 혹시 모르니 지운다.
+            //if (ChaosMod.Instance != null)
+            //{
+            //    // 설정에서 킨 개발자 모드가 아닐때
+            //    if (ChaosMod.IsDebug && !ChaosMod.Instance.DevMode)
+            //    {
+            //        var mods = new List<Modifier>() {
+            //            new OilFloor(),
+            //            new ClubMood(),
+            //            new TimeMult(0.5f),
+            //        };
+
+            //        foreach (Modifier mod in mods)
+            //        {
+            //            DebugEvents.Add(mod);
+            //        }
+            //    }
+            //}
 
             //List<Modifier> ShopMods = new List<Modifier>() {
             //    new Shop_DiscountEvent(),
@@ -187,6 +206,17 @@ namespace ChaosMod
         /// </summary>
         public bool isRunning { get => timerSelf > 0f; }
 
+        // 이걸 진작에 만들었어야 되는데...
+        /// <summary>
+        /// 이 이벤트만의 특별한 ID입니다.
+        /// </summary>
+        public int ID = 0;
+
+        /// <summary>
+        /// 이 이벤트가 실행되는지의 여부입니다.
+        /// </summary>
+        public bool enabled = true;
+
         public Modifier(string name, string description)
         {
             this.name = name;
@@ -263,10 +293,38 @@ namespace ChaosMod
             Instance.maxTimer = maxTimer;
             Instance.minTimer = minTimer;
             Instance.timerSelf = timerSelf;
+            Instance.ID = ID;
             Instance.options = new ModifierOptions(options.chance, options.oncePerLevel, options.multiplayerOnly, options.singleplayerOnly);
             Instance.isClone = true;
             Instance.Instance = this;
             return Instance;
+        }
+
+        /// <summary>
+        /// 이 이벤트 설정을 저장할때 사용됩니다.
+        /// </summary>
+        public virtual void Write(BinaryWriter bw)
+        {
+            bw.Write(ID);
+            bw.Write(enabled);
+            bw.Write(isOnce);
+            bw.Write(minTimer);
+            bw.Write(maxTimer);
+        }
+
+        public virtual void Read(BinaryReader br)
+        {
+            if (br.ReadInt32() != ID)
+            {
+
+                return;
+            }
+
+            enabled = br.ReadBoolean();
+            //isOnce = br.ReadBoolean();
+            br.ReadBoolean();
+            minTimer = br.ReadSingle();
+            maxTimer = br.ReadSingle();
         }
     }
 
