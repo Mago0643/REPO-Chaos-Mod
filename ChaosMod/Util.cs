@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
 using UnityEngine;
-using static GameDirector;
-using UnityEngine.TextCore.Text;
 
 namespace ChaosMod
 {

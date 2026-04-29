@@ -26,11 +26,24 @@ namespace ChaosMod
         internal List<Modifier> events = new List<Modifier>();
         internal float eventTimer;
         internal float timeScale = 1f;
+        private List<System.Action<Modifier>> stackedEvtActions = new List<System.Action<Modifier>>();
         [PunRPC]
         void StartEventTimerRPC(float time, PhotonMessageInfo info = default)
         {
             // if (GameManager.Multiplayer() && !info.Sender.IsMasterClient) return;
             eventTimer = time;
+        }
+
+        /// <summary>
+        /// 이벤트에 특정 함수를 실행합니다.
+        /// 
+        /// 이 함수는 <c>events</c>에 <c>foreach</c> 돌릴 때 가끔씩 오류가 발생하는 일을 막아줍니다.
+        /// </summary>
+        /// <param name="action">함수</param>
+        public void RunActionOnEventSafe(System.Action<Modifier> action)
+        {
+            if (!stackedEvtActions.Exists(act => action == act))
+                stackedEvtActions.Add(action);
         }
 
         void StartTimer(float time)
@@ -46,14 +59,18 @@ namespace ChaosMod
         {
             // if (GameManager.Multiplayer() && !info.Sender.IsMasterClient) return;
             var array = Modifiers.Events;
-            //if (Modifiers.DebugEvents.Count > 0)
-            //    array = Modifiers.DebugEvents;
+            if (Modifiers.DebugEvents.Count > 0)
+                array = Modifiers.DebugEvents;
             if (SemiFunc.RunIsShop())
                 array = Modifiers.ShopEvents;
             if (!(eventIndex >= 0 && eventIndex < array.Count)) return;
 
             Modifier template = array[eventIndex];
             Modifier mod = template.Clone();
+            if (!mod.isOnce) { 
+                mod.minTimer = template.minTimer;
+                mod.maxTimer = template.maxTimer;
+            }
             events.Add(mod);
             mod.Start();
 
@@ -85,14 +102,16 @@ namespace ChaosMod
                     Modifier tempMod = null;
                     if (SemiFunc.RunIsLevel())
                     {
-                        //if (Modifiers.DebugEvents.Count > 0)
-                        //{
-                        //    modIndex = Random.Range(0, Modifiers.DebugEvents.Count);
-                        //    tempMod = Modifiers.DebugEvents[modIndex];
-                        //} else {
+                        if (Modifiers.DebugEvents.Count > 0)
+                        {
+                            modIndex = Random.Range(0, Modifiers.DebugEvents.Count);
+                            tempMod = Modifiers.DebugEvents[modIndex];
+                        }
+                        else
+                        {
                             modIndex = Random.Range(0, Modifiers.Events.Count);
                             tempMod = Modifiers.Events[modIndex];
-                        //}
+                        }
                     } /*else if (SemiFunc.RunIsShop()) {
                         modIndex = Random.Range(0, Modifiers.ShopEvents.Count);
                         tempMod = Modifiers.ShopEvents[modIndex];
@@ -254,6 +273,15 @@ namespace ChaosMod
                 }
 
                 mod.Update();
+            }
+
+            if (stackedEvtActions.Count > 0) {
+                foreach (Modifier mod in events) {
+                    foreach (System.Action<Modifier> func in stackedEvtActions) {
+                        func(mod);
+                    }
+                }
+                stackedEvtActions.Clear();
             }
 
             // 디버깅 텍스트

@@ -1,8 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
+using static DataDirector;
 
 namespace ChaosMod
 {
@@ -15,6 +18,7 @@ namespace ChaosMod
             Range = 1,
             Value = 2,
             Color = 3,
+            Description = 4,
         }
 
         public class OptionItem
@@ -43,7 +47,9 @@ namespace ChaosMod
         private GameObject range_template;
         private GameObject float_template;
         private GameObject color_template;
+        private GameObject description_template;
         private Dictionary<string, GameObject[]> option_data = new Dictionary<string, GameObject[]>();
+        private GameObject option_title;
 
         internal VerticalLayoutGroup layout;
         internal UnityEvent<OptionType, string, object> onValueChanged = new UnityEvent<OptionType, string, object>();
@@ -68,11 +74,12 @@ namespace ChaosMod
             // 템플릿 설정
             item_template = menu.transform.GetChild(0) // Viewport
                             .GetChild(0)               // Content
-                            .GetChild(4).gameObject;   // Item
+                            .GetChild(5).gameObject;   // Item
             boolean_template = item_template.transform.parent.GetChild(0).gameObject;
             range_template = item_template.transform.parent.GetChild(1).gameObject;
             float_template = item_template.transform.parent.GetChild(2).gameObject;
             color_template = item_template.transform.parent.GetChild(3).gameObject;
+            description_template = item_template.transform.parent.GetChild(4).gameObject;
             layout = item_template.transform.parent.GetComponent<VerticalLayoutGroup>();
 
             item_template.SetActive(false);
@@ -80,6 +87,10 @@ namespace ChaosMod
             range_template.SetActive(false);
             float_template.SetActive(false);
             color_template.SetActive(false);
+            description_template.SetActive(false);
+
+            option_title = transform.Find("Text (TMP)").gameObject;
+            option_title.AddComponent<TextWaver>();
 
             //AddCategory("General");
             //var option = new List<OptionItem> { new OptionItem("Enabled", OptionType.Checkbox), new OptionItem("Timer Range", OptionType.Range), new OptionItem("Chance", OptionType.Value), new OptionItem("Color", OptionType.Color) };
@@ -211,6 +222,27 @@ namespace ChaosMod
                             datas.Add($"{optionName}:{option.name}", Color.black);
                             break;
                         }
+                    case OptionType.Description:
+                        {
+                            var text = Instantiate(description_template, child);
+                            text.SetActive(true); // i always forgot that i need to do this
+
+                            var component = text.GetComponent<TextMeshProUGUI>();
+                            component.text = option.name;
+                            component.fontSize = 15; // i thought text was small but it WAS NOT.
+                                                     // im fuckin' lazy to build asset bundle again
+                            float width = component.rectTransform.sizeDelta.x;
+
+                            // update the height
+                            component.rectTransform.sizeDelta = new Vector2(
+                                width,
+                                component.GetPreferredValues(component.text, width, Mathf.Infinity).y
+                            );
+
+                            option_data.Add($"{optionName}:{option.name}", new GameObject[] { text });
+                            datas.Add($"{optionName}:{option.name}", false);
+                            break;
+                        }
                 }
             }
 
@@ -310,6 +342,17 @@ namespace ChaosMod
             );
         }
 
+        public string GetText(string name)
+        {
+            if (!option_data.TryGetValue(name, out var objects))
+            {
+                ChaosMod.Logger.LogError($"Did not found option name with \"{name}\"");
+                return $"Did not found option name with \"{name}\"";
+            }
+
+            return objects[0].GetComponent<TextMeshProUGUI>().text;
+        }
+
         private bool _notify = false;
         public bool SetValue(string name, float[] range, bool notify = true)
         {
@@ -388,6 +431,36 @@ namespace ChaosMod
             return true;
         }
 
+        public bool SetText(string name, string text, bool notify = true)
+        {
+            if (!option_data.TryGetValue(name, out var objects))
+            {
+                ChaosMod.Logger.LogError($"Did not found option name with \"{name}\"");
+                return false;
+            }
+
+            OptionSetting setting = objects[0].transform.parent. // Options
+                parent. // Child
+                parent.GetComponent<OptionSetting>(); // Item
+
+            _notify = notify;
+            var component = objects[0].GetComponent<TextMeshProUGUI>();
+            setting.objectCount -= component.textInfo.lineCount - 1;
+            component.text = text;
+            component.ForceMeshUpdate();
+
+            float width = component.rectTransform.sizeDelta.x;
+            component.rectTransform.sizeDelta = new Vector2(
+                width,
+                component.GetPreferredValues(text, width, Mathf.Infinity).y
+            );
+            setting.objectCount += component.textInfo.lineCount - 1;
+
+            _notify = true;
+            datas[name] = text;
+            return true;
+        }
+
         // just text thing because it look sucks when you just throw all shit in that
         public void AddCategory(string text)
         {
@@ -405,6 +478,7 @@ namespace ChaosMod
         public void Hide()
         {
             Cover.CrossFadeAlpha(0f, 1f, true);
+            option_title.GetComponent<TMP_Text>().CrossFadeAlpha(0f, 1f, true);
             menu_bg.gameObject.SetActive(false);
             menu.SetActive(false);
             isShown = false;
@@ -413,6 +487,7 @@ namespace ChaosMod
         public void Show()
         {
             Cover.CrossFadeAlpha(1f, 1f, true);
+            option_title.GetComponent<TMP_Text>().CrossFadeAlpha(1f, 1f, true);
             menu_bg.gameObject.SetActive(true);
             menu.SetActive(true);
             isShown = true;

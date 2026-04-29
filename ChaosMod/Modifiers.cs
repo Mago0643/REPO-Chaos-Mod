@@ -16,7 +16,7 @@ namespace ChaosMod
         public static void Init(Action<Modifier> callback = null)
         {
             List<Modifier> modifiers = new List<Modifier>() {
-                new Modifier("evt_none",""){isOnce = true},// 무효
+                new Modifier("evt_none","evt_none_desc"){isOnce = true},// 무효
                 new Tumble(),                              // 넘어지기
                 new KillAllMonsters(),                     // 모든 몬스터 죽이기
                 new QuakeFOV(),                            // 넓은 시야각
@@ -57,11 +57,15 @@ namespace ChaosMod
                 new TimeMult(2f),                          // 타이머 2배
                 new TimeMult(0.5f),                        // 타이머 0.5배
                 new TimeMult(4f),                          // 타이머 4배
-                // new OilFloor(),
-                // 모든 플레이어가 무적
-                // 모든 몬스터가 무적
-                // 술 취함
+                new RandomItems(),
+                new RandomUpgrade(),
+                new InfinteStamina(),
+                new Invincible(),
+                new InfiniteJump()
             };
+
+            if (ChaosMod.IsDebug)
+                ChaosMod.Logger.LogInfo("There's currently " + modifiers.Count + " events active.");
 
             foreach (Modifier mod in modifiers)
             {
@@ -70,24 +74,26 @@ namespace ChaosMod
                 Events.Add(mod);
             }
 
-            // 혹시 모르니 지운다.
-            //if (ChaosMod.Instance != null)
-            //{
-            //    // 설정에서 킨 개발자 모드가 아닐때
-            //    if (ChaosMod.IsDebug && !ChaosMod.Instance.DevMode)
-            //    {
-            //        var mods = new List<Modifier>() {
-            //            new OilFloor(),
-            //            new ClubMood(),
-            //            new TimeMult(0.5f),
-            //        };
+            if (ChaosMod.Instance != null)
+            {
+                // 설정에서 킨 개발자 모드가 아닐때
+                if (ChaosMod.IsDebug && !ChaosMod.Instance.DevMode)
+                {
+                    var mods = new List<Modifier>() {
+                        new RandomItems(),
+                        new RandomUpgrade(),
+                        new InfinteStamina(),
+                        new Invincible(),
+                        new InfiniteJump(),
+                        new MonsterSound()
+                    };
 
-            //        foreach (Modifier mod in mods)
-            //        {
-            //            DebugEvents.Add(mod);
-            //        }
-            //    }
-            //}
+                    foreach (Modifier mod in mods)
+                    {
+                        DebugEvents.Add(mod);
+                    }
+                }
+            }
 
             //List<Modifier> ShopMods = new List<Modifier>() {
             //    new Shop_DiscountEvent(),
@@ -206,7 +212,6 @@ namespace ChaosMod
         /// </summary>
         public bool isRunning { get => timerSelf > 0f; }
 
-        // 이걸 진작에 만들었어야 되는데...
         /// <summary>
         /// 이 이벤트만의 특별한 ID입니다.
         /// </summary>
@@ -216,6 +221,41 @@ namespace ChaosMod
         /// 이 이벤트가 실행되는지의 여부입니다.
         /// </summary>
         public bool enabled = true;
+
+        /// <summary>
+        /// 플레이어가 부활할 때 호출됩니다.
+        /// <para></para>
+        /// <b>아직 구현 안됨</b>
+        /// </summary>
+        public event Action<PlayerAvatar> onPlayerRespawned;
+
+        /// <summary>
+        /// 플레이어가 죽었을 때 호출됩니다.
+        /// <para></para>
+        /// <b>아직 구현 안됨</b>
+        /// </summary>
+        public event Action<PlayerAvatar> onPlayerDead;
+
+        /// <summary>
+        /// 적이 디스폰 됐을 때 호출됩니다.
+        /// <para></para>
+        /// <b>아직 구현 안됨</b>
+        /// </summary>
+        public event Action<EnemyParent> onEnemyDespawned;
+
+        /// <summary>
+        /// 적이 리스폰 됐을 때 호출됩니다.
+        /// <para></para>
+        /// <b>아직 구현 안됨</b>
+        /// </summary>
+        public event Action<EnemyParent> onEnemyRespawned;
+
+        /// <summary>
+        /// 적이 죽었을 때 호출됩니다.
+        /// <para></para>
+        /// <b>아직 구현 안됨</b>
+        /// </summary>
+        public event Action<EnemyParent> onEnemyDeath;
 
         public Modifier(string name, string description)
         {
@@ -298,33 +338,6 @@ namespace ChaosMod
             Instance.isClone = true;
             Instance.Instance = this;
             return Instance;
-        }
-
-        /// <summary>
-        /// 이 이벤트 설정을 저장할때 사용됩니다.
-        /// </summary>
-        public virtual void Write(BinaryWriter bw)
-        {
-            bw.Write(ID);
-            bw.Write(enabled);
-            bw.Write(isOnce);
-            bw.Write(minTimer);
-            bw.Write(maxTimer);
-        }
-
-        public virtual void Read(BinaryReader br)
-        {
-            if (br.ReadInt32() != ID)
-            {
-
-                return;
-            }
-
-            enabled = br.ReadBoolean();
-            //isOnce = br.ReadBoolean();
-            br.ReadBoolean();
-            minTimer = br.ReadSingle();
-            maxTimer = br.ReadSingle();
         }
     }
 

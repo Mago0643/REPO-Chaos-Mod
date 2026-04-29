@@ -22,6 +22,9 @@ namespace ChaosMod
                 ?? new Dictionary<string, string>();
         }
 
+        // i need to change this logic
+        // maybe it would look like GetText(string key, string noneFound = null)
+        // if it did not found the key on the dictionary, return "noneFound" by default.
         public static string GetText(string key)
         {
             return _table.TryGetValue(key, out var value) ? value : key;

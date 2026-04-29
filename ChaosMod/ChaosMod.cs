@@ -27,12 +27,12 @@ namespace ChaosMod
         internal static bool IsDebug
         {
             get {
-                bool enable = false;
+                bool enable = false; // change this true to experience the "real" debug mode.
                 return Instance.DevMode || enable;
             }
         }
-        public static readonly bool DISABLE_TIMER = false;
-        internal const float MaxEventTimer = 20f;
+        internal static readonly bool DISABLE_TIMER = false;
+        internal static float MaxEventTimer = 20f;
         /// <summary>
         /// This list contains enemy who is not despawned. (if despawns removes from the list automatically)
         /// </summary>
@@ -123,6 +123,7 @@ namespace ChaosMod
             GameObject UIPrefab = Instantiate(assets.LoadAsset<GameObject>("Chaos Controller"));
             UICanvas = UIPrefab.GetComponent<Canvas>();
 
+            // if i can figure this out, i can make many effect such like grayscale, tiled screen, perspective effect.
             // shaderOverlay = canvas.AddComponent<PostProcessVolume>();
             /*shaderOverlay.isGlobal = true;
             shaderOverlay.priority = 1f;
@@ -201,22 +202,24 @@ namespace ChaosMod
             GameObject settings = Instantiate(assets.LoadAsset<GameObject>("Settings"), UICanvas.transform, false);
             options = settings.AddComponent<OptionsMenuController>();
             FakeCursor = settings.transform.Find("Mouse Cursor").GetComponent<RawImage>();
+
+            // i need color this stuff damn....
             var fuck = GameObject.Find("Cursor").transform.GetChild(0).GetComponent<RawImage>();
             FakeCursor.texture = fuck.texture;
             FakeCursor.material = fuck.material;
             FakeCursor.gameObject.SetActive(false);
             FakeCursor.rectTransform.sizeDelta = new Vector2(128f/2f, 111f/2f);
             FakeCursor.raycastTarget = false;
-            FakeCursor.rectTransform.pivot = new Vector2(0.2f, 0.8f);
+            FakeCursor.rectTransform.pivot = new Vector2(0f, 1f);
 
-            if (IsDebug)
-                Logger.LogInfo("프리팹을 풀에 추가하는 중...");
-            foreach (GameObject prefab in PrefabToAddNetwork)
-            {
-                NetworkPrefabs.RegisterNetworkPrefab(prefab);
-                if (IsDebug)
-                    Logger.LogMessage($"프리팹 추가됨: {prefab.name}");
-            }
+            //if (IsDebug)
+            //    Logger.LogInfo("프리팹을 풀에 추가하는 중...");
+            //foreach (GameObject prefab in PrefabToAddNetwork)
+            //{
+            //    NetworkPrefabs.RegisterNetworkPrefab(prefab);
+            //    if (IsDebug)
+            //        Logger.LogMessage($"프리팹 추가됨: {prefab.name}");
+            //}
 
             Logger.LogMessage("Setup Done. '-'");
 
@@ -232,37 +235,51 @@ namespace ChaosMod
             var options_general = Language.GetText("options_general");
 
             string timebarColor = Language.GetText("options_gauge_color");
-            string dizz = Language.GetText("options_dizzyness");
+            string dizz = Language.GetText("options_dizziness");
             string family = Language.GetText("options_family_friendly");
             string dev = Language.GetText("options_dev_mode");
+            string timer = Language.GetText("options_timer");
             options.AddOption(options_general, new List<OptionItem>
             {
+                new OptionItem(timer, OptionType.Value, 5f, 120f),
+                new OptionItem(Language.GetText("options_timer_desc"), OptionType.Description),
                 new OptionItem(timebarColor, OptionType.Color),
+                new OptionItem(Language.GetText("options_gauge_color_desc"), OptionType.Description),
                 new OptionItem(dizz, OptionType.Checkbox),
+                new OptionItem(Language.GetText("options_dizziness_desc"), OptionType.Description),
                 new OptionItem(family, OptionType.Checkbox),
+                new OptionItem(Language.GetText("options_family_friendly_desc"), OptionType.Description),
                 new OptionItem(dev, OptionType.Checkbox),
+                new OptionItem(Language.GetText("options_dev_mode_desc"), OptionType.Description)
             });
 
             options.SetValue($"{options_general}:{timebarColor}", new Color(144f/255f, 0, 0), false);
             options.SetValue($"{options_general}:{dizz}", false, false);
             options.SetValue($"{options_general}:{family}", false, false);
             options.SetValue($"{options_general}:{dev}", false, false);
+            options.SetValue($"{options_general}:{timer}", MaxEventTimer, false);
 
             var options_lvl_evts = Language.GetText("options_lvl_evts");
             string evt_enabled = Language.GetText("options_evts_enabled");
             string evt_chance = Language.GetText("options_evts_chance");
             string evt_duration = Language.GetText("options_evts_range");
+            string range = Language.GetText("options_range");
+            string float_maxValue = Language.GetText("infinity");
+            string seconds = Language.GetText("options_seconds");
             options.AddCategory(options_lvl_evts);
             Modifiers.Init(mod =>
             {
                 var items = new List<OptionItem> {
+                    new OptionItem(mod.GetDesc(), OptionType.Description),
                     new OptionItem(evt_enabled, OptionType.Checkbox),
                     new OptionItem(evt_chance, OptionType.Value, 0f, 100f),
+                    new OptionItem($"{range}: 0.0 ~ 100.0", OptionType.Description)
                 };
 
                 if (!mod.isOnce)
                 {
-                    items.Add(new OptionItem(evt_duration, OptionType.Range, 0, float.MaxValue));
+                    items.Add(new OptionItem(evt_duration, OptionType.Range, 1, float.MaxValue));
+                    items.Add(new OptionItem($"{range}: 1.0 ~ {float_maxValue} ({seconds})", OptionType.Description));
                 }
 
                 options.AddOption(mod.GetName(), items);
@@ -288,6 +305,9 @@ namespace ChaosMod
                     } else if (fuckSwitch == dev) {
                         DevMode = (bool)value;
                         hasChanges = true;
+                    } else if (fuckSwitch == timer) {
+                        MaxEventTimer = (float)value;
+                        hasChanges = true;
                     }
                 } else {
                     foreach (Modifier mod in Modifiers.Events)
@@ -309,9 +329,6 @@ namespace ChaosMod
                         }
                     }
                 }
-
-                if (hasChanges && IsDebug)
-                    Logger.LogInfo("User has changed something");
             });
             Logger.LogInfo("Settings are created!");
         }
@@ -442,9 +459,14 @@ namespace ChaosMod
         internal bool dizzyness = true;
         internal bool familyFriendly = false;
         private bool hasChanges = false;
-
+        bool godModOn = false;
         internal bool InitPhotonView()
         {
+            // i wanted to add "Watch AD" event,
+            // but videos take a lot of assetbundle's file size,
+            // and it takes too long on load.
+            //
+            // that's why i did not put this lol
             /*if (adObject == null)
             {
                 adObject = Instantiate(assets.LoadAsset<GameObject>("AD Viewer"), Vector3.zero, Quaternion.identity);
@@ -474,6 +496,15 @@ namespace ChaosMod
                     view = null;
                     photonViewInited = false;
                     return false;
+                }
+            }
+
+            // yep
+            if (!godModOn && IsDebug && !DevMode) {
+                if (SemiFunc.PlayerAvatarLocal() != null) { // fuck i keep dying while testing the mod alone. its really annoying
+                    godModOn = true;
+                    var me = SemiFunc.PlayerAvatarLocal();
+                    Util.GetInternalVar(me.playerHealth, "godMode").SetValue(me.playerHealth, true);
                 }
             }
 
@@ -585,7 +616,7 @@ namespace ChaosMod
 
                     float y = text_height * visibleIndex;
 
-                    if (y >= 375f * controller.timeScale)
+                    if (y >= 375f * controller.timeScale && controller.events[i].timerSelf <= 0f)
                     {
                         EventToRemove.Add(i);
                         TextToRemove.Add(i);
@@ -694,6 +725,7 @@ namespace ChaosMod
                     //{
                     //    mod.options.chance = 1f;
                     //}
+                    godModOn = false;
                     ModVars.Reset();
                 }
 
@@ -708,7 +740,7 @@ namespace ChaosMod
                 photonViewInited = InitPhotonView();
             }
 
-            // 개 병신새끼야 나가 뒤져 시발 아주 잘도 태어났네
+            
             //if (carObject == null || car == null)
             //{
             //    var car_assets = CarCrash.car_assets;

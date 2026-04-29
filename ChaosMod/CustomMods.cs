@@ -3,6 +3,7 @@ using REPOLib.Modules;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
@@ -54,7 +55,11 @@ namespace ChaosMod
                 if (choosen >= count) break;
                 if (Random.Range(0f, 1f) <= 0.6f) continue;
 
-                Enemies.SpawnEnemy(monster, points[UnityEngine.Random.Range(0, points.Length)].transform.position, Quaternion.identity);
+                var parents = Enemies.SpawnEnemy(monster, points[UnityEngine.Random.Range(0, points.Length)].transform.position, Quaternion.identity);
+                foreach (EnemyParent p in parents) {
+                    if (!ChaosMod.Instance.spawnedEnemys.Contains(p))
+                        ChaosMod.Instance.spawnedEnemys.Add(p);
+                }
                 ChaosMod.Logger.LogInfo($"적 스폰됨: {monster.name}");
 
                 choosen += 1;
@@ -233,27 +238,13 @@ namespace ChaosMod
         }
     }
 
+    // 버그: 소리 안들림
     public class MonsterSound: Modifier
     {
-        public List<AudioClip> sounds;
-
         public MonsterSound(): base("evt_hallucination", "evt_hallucination_desc")
         {
             isOnce = true;
             ID = 7;
-
-            // might change this later
-            
-            sounds = new List<AudioClip>();
-            var sound_names = new List<string>() { "duck", "animal", "hunter" };
-            foreach (string name in sound_names)
-            {
-                for (int i = 1; i <= 3; i++)
-                    sounds.Add(ChaosMod.Instance.assets.LoadAsset<AudioClip>($"{name}{i}"));
-            }
-
-            sounds.Add(ChaosMod.Instance.assets.LoadAsset<AudioClip>("clown"));
-            sounds.Add(ChaosMod.Instance.assets.LoadAsset<AudioClip>("rugurt"));
         }
 
         public override void Start()
@@ -261,7 +252,151 @@ namespace ChaosMod
             base.Start();
 
             // ((MonsterSound)Instance).options.chance -= 0.05f;
-            ChaosMod.Instance.EnemyAS.PlayOneShot(sounds[Random.Range(1, sounds.Count)], 0.5f);
+            // ChaosMod.Instance.EnemyAS.PlayOneShot(sounds[Random.Range(1, sounds.Count)], 0.5f);
+            AudioClip clip = null;
+            float volume = 1f;
+            float pitch = 1f;
+            bool getout = false;
+            foreach (EnemyParent enemy in GameObject.FindObjectsByType<EnemyParent>(0)) {
+                if (Random.Range(0f, 1f) <= 0.5f) { // 50% chance
+                    // checks if it is right enemy to play a sound
+                    // hardcode for most enemies
+                    switch (enemy.name) {
+                        case "Clown": {
+                            var anim = enemy.transform.GetComponentInChildren<EnemyBeamerAnim>(true);
+                            clip = anim.soundAttackIntro.Sounds[0];
+                            volume = anim.soundAttackIntro.Volume;
+
+                            getout = true;
+                            break;
+                        }
+                        case "Animal": {
+                            var anim = enemy.transform.GetComponentInChildren<EnemyAnimalAnim>(true);
+                            clip = anim.noticeSound.Sounds[Random.Range(0, anim.noticeSound.Sounds.Length)];
+                            volume = 0.3f;
+
+                            getout = true;
+                            break;
+                        }
+                        case "Chef": {
+                            getout = true;
+                            break;
+                        }
+                        case "Cleanup Crew": {
+                            var anim = enemy.transform.GetComponentInChildren<EnemyBombThrowerAnim>(true);
+                            clip = anim.soundTorsoHeadsScream.Sounds[0];
+                            volume = 0.45f;
+                            getout = true;
+                            break;
+                        }
+                        case "Apex Predator": {
+                            var anim = enemy.transform.GetComponentInChildren<EnemyDuckAnim>(true);
+                            clip = anim.noticeSound.Sounds[Random.Range(0, anim.noticeSound.Sounds.Length)];
+                            volume = 0.4f;
+                            getout = true;
+                            break;
+                        }
+                        case "Elsa": {
+                            var anim = enemy.transform.GetComponentInChildren<EnemyElsaAnim>(true);
+                            clip = anim.barkSmallSound.Sounds[Random.Range(0, anim.barkSmallSound.Sounds.Length)];
+                            volume = 0.375f + Random.Range(0f, 0.02f);
+                            pitch += Random.Range(0f, 0.1f);
+                            getout = true;
+                            break;
+                        }
+                        case "Mentalist": {
+                            var anim = enemy.transform.GetComponentInChildren<EnemyFloaterAnim>(true);
+                            clip = anim.sfxMoveLong.Sounds[Random.Range(0, anim.sfxMoveLong.Sounds.Length)];
+                            volume = 0.3f + Random.Range(0f, 0.05f);
+                            pitch += Random.Range(0f, 0.1f);
+                            getout = true;
+                            break;
+                        }
+                        case "Gnome": {
+                            var anim = enemy.transform.GetComponentInChildren<EnemyGnomeAnim>(true);
+                            clip = anim.soundNotice.Sounds[Random.Range(0, anim.soundNotice.Sounds.Length)];
+                            volume = 0.2f + Random.Range(0f, 0.05f);
+                            pitch += Random.Range(0f, 0.05f);
+                            getout = true;
+                            break;
+                        }
+                        case "Headman": {
+                            var anim = enemy.transform.GetComponentInChildren<EnemyHeadAnimationSystem>(true);
+                            clip = anim.ChaseBegin.Sounds[0]; // i wanted to find that piano sound but theres too many sounds to find one
+                            volume = anim.ChaseBegin.Volume;
+                            getout = true;
+                            break;
+                        }
+                        case "Headgrab": {
+                            var anim = enemy.transform.GetComponentInChildren<EnemyHeadGrabberAnim>(true);
+                            clip = anim.soundNotice.Sounds[0];
+                            volume = 0.4f;
+                            break;
+                        }
+                        case "Heart Hugger": {
+                            var scr = enemy.transform.GetComponentInChildren<EnemyHeartHugger>(true);
+                            clip = scr.soundGrow.Sounds[Random.Range(0, scr.soundGrow.Sounds.Length)];
+                            volume = 0.5f + Random.Range(0f, 0.1f);
+                            pitch += Random.Range(0f, 0.1f);
+                            getout = true;
+                            break;
+                        }
+                        case "Hidden": {
+                            var anim = enemy.transform.GetComponentInChildren<EnemyHiddenAnim>(true);
+                            clip = anim.soundBreatheInFast.Sounds[Random.Range(0, anim.soundBreatheInFast.Sounds.Length)];
+                            volume = 0.1f + Random.Range(0f, 0.02f);
+                            pitch += Random.Range(0f, 0.1f);
+                            getout = true;
+                            break;
+                        }
+                        case "Huntsman": {
+                            var anim = enemy.transform.GetComponentInChildren<EnemyHunterAnim>(true);
+                            clip = anim.aimStartClips[Random.Range(0, anim.aimStartClips.Length)];
+                            volume = 0.5f;
+                            getout = true;
+                            break;
+                        }
+                        case "Trudge": {
+                            var anim = enemy.transform.GetComponentInChildren<EnemySlowWalkerAnim>(true);
+                            clip = anim.sfxNoticeVoice.Sounds[Random.Range(0, anim.sfxNoticeVoice.Sounds.Length)];
+                            volume = 0.5f + Random.Range(0f, 0.1f);
+                            pitch += Random.Range(0f, 0.1f);
+                            getout = true;
+                            break;
+                        }
+                        case "Tick": {
+                            var anim = enemy.transform.GetComponentInChildren<EnemyTickAnim>(true);
+                            clip = anim.noticeSound.Sounds[Random.Range(0, anim.noticeSound.Sounds.Length)];
+                            volume = 0.5f + Random.Range(0f, 0.1f);
+                            pitch += Random.Range(0f, 0.1f);
+                            getout = true;
+                            break;
+                        }
+                        case "Bella": {
+                            var scr = enemy.transform.GetComponentInChildren<EnemyTricycle>(true);
+                            clip = scr.audioBell.Sounds[Random.Range(0, scr.audioBell.Sounds.Length)];
+                            volume = 0.8f;
+                            getout = true;
+                            break;
+                        }
+                        case "Rugrat": {
+                            var anim = enemy.transform.GetComponentInChildren<EnemyValuableThrowerAnim>(true);
+                            clip = anim.noticeSound.Sounds[0];
+                            volume = 0.4f + Random.Range(0f, 0.05f);
+                            pitch += Random.Range(0f, 0.1f);
+                            getout = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (getout) break;
+            }
+
+            if (clip != null) {
+                ChaosMod.Instance.EnemyAS.pitch = pitch;
+                ChaosMod.Instance.EnemyAS.PlayOneShot(clip, volume);
+            }
         }
 
         public override Modifier Clone()
@@ -276,7 +411,7 @@ namespace ChaosMod
         public AddHealth(int amount): base("체력 추가", "evt_health_desc")
         {
             this.amount = amount;
-            name = (amount > 0 ? "+" : "") + $"{amount} HP";
+            name = (amount >= 0 ? "+" : "") + $"{amount} HP";
             isOnce = true;
             options.oncePerLevel = true;
             ID = 8;
@@ -770,6 +905,12 @@ namespace ChaosMod
             minTimer = 20f;
             maxTimer = 40f;
             ID = 17;
+        }
+
+        public override void Start()
+        {
+            base.Start();
+            ChaosMod.Instance.spawnedEnemys = GameObject.FindObjectsByType<EnemyParent>(0).ToHashSet();
         }
 
         public override Modifier Clone()
@@ -1293,6 +1434,8 @@ namespace ChaosMod
                     Modifiers.Excludes.Add(evt);
             }
 
+            ChaosMod.Instance.spawnedEnemys = GameObject.FindObjectsByType<EnemyParent>(0).ToHashSet();
+
             src = ChaosMod.Instance.ClubSource;
             src.volume = 0f;
             src.Play();
@@ -1355,7 +1498,9 @@ namespace ChaosMod
                         valuable.OverrideIndestructible(timerSelf + 3f);
                         bool fuckit = true;
                         if (valuable.TryGetComponent<PhysGrabObjectImpactDetector>(out var impact))
-                            fuckit = !impact.inCart;
+                            fuckit = !(impact.inCart || valuable.grabbed);
+                        if (valuable.name.Contains("Cart"))
+                            fuckit = false;
 
                         if ((bool)valuable.rb && fuckit)
                             valuable.rb.AddForce(Vector3.up * (3.5f * valuable.massOriginal), ForceMode.Impulse);
@@ -1461,6 +1606,7 @@ namespace ChaosMod
             // do not make cart and tumbled players go crazy move because it makes the game unplayable
             items.RemoveAll(x => x.transform.name.Contains("Cart") || x.transform.name.Contains("Tumble"));
             players = SemiFunc.PlayerGetAll();
+            ChaosMod.Instance.spawnedEnemys = GameObject.FindObjectsByType<EnemyParent>(0).ToHashSet();
         }
 
         public override void Update()
@@ -1640,6 +1786,328 @@ namespace ChaosMod
         public override Modifier Clone()
         {
             return new OilFloor { Instance = this, isClone = true }; 
+        }
+    }
+
+    public class RandomUpgrade: Modifier
+    {
+        public RandomUpgrade(): base("evt_random_upgrade", "evt_random_upgrade_desc")
+        {
+            isOnce = true;
+            ID = 33;
+        }
+
+        public override void Start()
+        {
+            if (!SemiFunc.IsMasterClientOrSingleplayer()) return;
+            foreach (PlayerAvatar semibot in SemiFunc.PlayerGetAll())
+            {
+                UpgradePlayer(semibot);
+            }
+
+            base.Start();
+        }
+
+        void UpgradePlayer(PlayerAvatar plr)
+        {
+            // TODO: Maybe think about upgrade mods??
+            if (SemiFunc.IsMasterClientOrSingleplayer())
+            {
+                string steamID = SemiFunc.PlayerGetSteamID(plr);
+                string upgrade = "Map Player Count";
+                var upgradeFunc = PunManager.instance.UpgradeMapPlayerCount;
+                switch (Random.Range(0, 12))
+                {
+                    case 0:
+                        upgradeFunc = PunManager.instance.UpgradeDeathHeadBattery;
+                        upgrade = "Death Head Battery";
+                        break;
+                    case 1:
+                        upgradeFunc = PunManager.instance.UpgradePlayerCrouchRest;
+                        upgrade = "Crouch Rest";
+                        break;
+                    case 2:
+                        upgradeFunc = PunManager.instance.UpgradePlayerEnergy;
+                        upgrade = "Energy";
+                        break;
+                    case 3:
+                        upgradeFunc = PunManager.instance.UpgradePlayerExtraJump;
+                        upgrade = "Extra Jump";
+                        break;
+                    case 4:
+                        upgradeFunc = PunManager.instance.UpgradePlayerGrabRange;
+                        upgrade = "Grab Range";
+                        break;
+                    case 5:
+                        upgradeFunc = PunManager.instance.UpgradePlayerGrabStrength;
+                        upgrade = "Grab Strength";
+                        break;
+                    case 6:
+                        upgradeFunc = PunManager.instance.UpgradePlayerHealth;
+                        upgrade = "Health";
+                        break;
+                    case 7:
+                        upgradeFunc = PunManager.instance.UpgradePlayerSprintSpeed;
+                        upgrade = "Sprint Speed";
+                        break;
+                    //case 8: // i think this is unused? or in the future update?? or this is LORE???????????
+                    //        // not adding it cuz felt not so.
+                    //    upgradeFunc = PunManager.instance.UpgradePlayerThrowStrength;
+                    //    upgrade = "Throw Strength";
+                    //    break;
+                    case 8:
+                        // map upgrade is useless after getting one.
+                        // reroll again
+                        if (StatsManager.instance.playerUpgradeMapPlayerCount[steamID] > 0)
+                            UpgradePlayer(plr);
+                        break;
+                    case 9:
+                        upgradeFunc = PunManager.instance.UpgradePlayerTumbleClimb;
+                        upgrade = "Tumble Climb";
+                        break;
+                    case 10:
+                        upgradeFunc = PunManager.instance.UpgradePlayerTumbleLaunch;
+                        upgrade = "Tumble Launch";
+                        break;
+                    case 11:
+                        upgradeFunc = PunManager.instance.UpgradePlayerTumbleWings;
+                        upgrade = "Tumble Wings";
+                        break;
+                }
+                upgradeFunc(steamID, 1); // only 1 upgrade cuz it makes game pretty boring
+                ChaosMod.Logger.LogInfo(plr.name + " got \"" + upgrade + "\" upgrade.");
+            }
+
+            // play animations
+            if (SemiFunc.PlayerAvatarLocal() == plr)
+            {
+                StatsUI.instance.Fetch();
+                StatsUI.instance.ShowStats();
+                CameraGlitch.Instance.PlayUpgrade();
+            } else { 
+                GameDirector.instance.CameraImpact.ShakeDistance(5f, 1f, 6f, plr.transform.position, 0.2f);
+            }
+
+            if (!GameManager.Multiplayer() || PhotonNetwork.IsMasterClient)
+            {
+                plr.playerHealth.MaterialEffectOverride(PlayerHealth.Effect.Upgrade);
+            }
+        }
+
+        public override Modifier Clone()
+        {
+            return new RandomUpgrade() { Instance = this, isClone = true };
+        }
+    }
+
+    public class RandomItems: Modifier
+    {
+        public RandomItems(): base("evt_random_items", "evt_random_items_desc")
+        {
+            isOnce = true;
+            ID = 34;
+            options.chance = 90f;
+        }
+
+        public override void Start()
+        {
+            string itemPrefabName = "items/";
+            string[] items = new string[] { // there's a cart named 'Big Cart', it is quite bigger than Medium cart. maybe this is another LORE????
+                "Item Cart Cannon", "Item Cart Laser", "Item Cart Small", "Item Cart Medium",
+                "Item Drone Battery", "Item Drone Feather", "Item Drone Indestructible", "Item Drone Torque", "Item Drone Zero Gravity",
+                "Item Duck Bucket", "Item Extraction Tracker", "Item Grenade Duct Taped", "Item Grenade Explosive", "Item Grenade Human", "Item Grenade Shockwave", "Item Grenade Stun",
+                "Item Gun Handgun", "Item Gun Laser", "Item Gun Shockwave", "Item Gun Shotgun", "Item Gun Stun", "Item Gun Tranq",
+                 "Item Health Pack Large", "Item Health Pack Medium", "Item Health Pack Small",
+                "Item Melee Baseball Bat", "Item Melee Frying Pan", "Item Melee Inflatable Hammer", "Item Melee Sledge Hammer", "Item Melee Stun Baton", "Item Melee Sword",
+                "Item Mine Explosive", "Item Mine Shockwave", "Item Mine Stun", "Item Orb Zero Gravity", "Item Phase Bridge", "Item Power Crystal",
+                // this is an important one
+                "Item Rubber Duck",
+                "Item Upgrade Death Head Battery", "Item Upgrade Map Player Count", "Item Upgrade Player Crouch Rest", "Item Upgrade Player Energy", "Item Upgrade Player Extra Jump",
+                "Item Upgrade Player Grab Range", "Item Upgrade Player Grab Strength", "Item Upgrade Player Health", "Item Upgrade Player Sprint Speed", "Item Upgrade Player Tumble Climb",
+                "Item Upgrade Player Tumble Launch", "Item Upgrade Player Tumble Wings", "Item Valuable Tracker"
+            };
+
+            // TODO: Think about modded items
+            // maybe i can get all items by messing with
+            // REPOLib.Modules.NetworkPrefabs.PrefabRefs?? 
+
+            foreach (PlayerAvatar semibot in SemiFunc.PlayerGetAll())
+            {
+                string itemName = itemPrefabName + items[Random.Range(0,items.Length)];
+                GameObject item = GameObject.Instantiate(Resources.Load<GameObject>(itemName), semibot.transform.position + new Vector3(0f, 2f, 0f), Quaternion.identity);
+
+                // do i need to save them forever? or not.
+                // adding option later to turn off because think about when this event happens rapidly
+                //ItemAttributes attr = item.GetComponent<ItemAttributes>();
+                //StatsManager.instance.itemDictionary[attr.item.name] = attr.item;
+                //StatsManager.instance.itemsPurchased[attr.item.name]++;
+                //StatsManager.instance.itemsPurchasedTotal[attr.item.name]++;
+            }
+
+            base.Start();
+        }
+
+        public override Modifier Clone()
+        {
+            return new RandomItems() { Instance = this, isClone = true };
+        }
+    }
+
+    public class InfinteStamina: Modifier
+    {
+        public InfinteStamina(): base("evt_infinite_stamina", "evt_infinite_stamina_desc")
+        {
+            minTimer = 60f;
+            maxTimer = 120f;
+            ID = 35;
+        }
+
+        public override void Update()
+        {
+            PlayerController.instance.EnergyCurrent = PlayerController.instance.EnergyStart;
+        }
+
+        public override Modifier Clone()
+        {
+            return new InfinteStamina() { Instance = this, isClone = true };
+        }
+    }
+
+    public class Invincible: Modifier
+    {
+        public Invincible(): base("evt_invincible", "evt_invincible_desc")
+        {
+            minTimer = 60f;
+            maxTimer = 120f;
+            ID = 36;
+        }
+
+        public override void Start()
+        {
+            foreach (PlayerAvatar plr in SemiFunc.PlayerGetAll())
+            {
+                Util.GetInternalVar(plr.playerHealth, "godMode").SetValue(plr.playerHealth, true);
+            }
+            base.Start();
+        }
+
+        public override void OnFinished()
+        {
+            foreach (PlayerAvatar plr in SemiFunc.PlayerGetAll())
+            {
+                Util.GetInternalVar(plr.playerHealth, "godMode").SetValue(plr.playerHealth, false);
+            }
+            base.OnFinished();
+        }
+
+
+        public override Modifier Clone()
+        {
+            return new Invincible() { Instance = this, isClone = true };
+        }
+    }
+
+    public class FuckGravity: Modifier
+    {
+        public FuckGravity(): base("evt_fuck_gravity", "evt_fuck_gravity_desc")
+        {
+            minTimer = 30f;
+            maxTimer = 40f;
+            ID = 39;
+        }
+
+        float gravity = 0f;
+        public override void Start()
+        {
+            gravity = -9.81f;
+            base.Start();
+        }
+
+        float rand()
+        {
+            return (Random.Range(0, 2) - 0.5f) * 0.3f;
+        }
+
+        public override void Update()
+        {
+            gravity += rand();
+            Physics.gravity = new Vector3(0f, gravity, 0f);
+            base.Update();
+        }
+
+        public override void OnFinished()
+        {
+            Physics.gravity = new Vector3(0f, -9.81f, 0f);
+            base.OnFinished();
+        }
+    }
+
+    public class InfiniteJump: Modifier
+    {
+        public InfiniteJump(): base("evt_infinite_jump", "evt_infinite_jump_desc")
+        {
+            minTimer = 60f;
+            maxTimer = 120f;
+            ID = 37;
+        }
+
+        private FieldInfo jumpCount;
+        public override void Start()
+        {
+            jumpCount = Util.GetInternalVar(PlayerController.instance, "JumpExtraCurrent");
+            jumpCount.SetValue(PlayerController.instance, 100);
+
+            base.Start();
+        }
+
+        private float timer = 0f;
+        public override void Update()
+        {
+            // 더 좋은 방법 추천받습니다
+            // 1초에 100번 뛰는 사람은 없겠지???????????????????????????????????
+            if (timer > 0f)
+                timer -= Time.fixedDeltaTime;
+            else {
+                jumpCount.SetValue(PlayerController.instance, 100);
+                timer = 1f;
+            }
+        }
+
+        public override void OnFinished()
+        {
+            timer = 9e9f;
+            Util.GetInternalVar(PlayerController.instance, "JumpExtraCurrent").SetValue(
+                PlayerController.instance, Util.GetInternalVar<int>(PlayerController.instance, "JumpExtra")
+            );
+
+            base.OnFinished();
+        }
+
+        public override Modifier Clone()
+        {
+            return new InfiniteJump { Instance = this, isClone = true };
+        }
+    }
+
+    // THIS IS NOT DONE YET!!
+    public class PlayScarySound: Modifier
+    {
+        public PlayScarySound(): base("evt_doodoo_scary", "evt_doodoo_scary_desc")
+        {
+            isOnce = true;
+        }
+
+        public override void Start()
+        {
+            AudioClip clip = ChaosMod.Instance.assets.LoadAsset<AudioClip>("scary_sound" + Random.Range(0, 12));
+            ChaosMod.Instance.AudioSource.PlayOneShot(clip);
+
+            base.Start();
+        }
+
+        public override Modifier Clone()
+        {
+            return new PlayScarySound() { Instance = this, isClone = true };
         }
     }
 }

@@ -14,6 +14,7 @@ namespace ChaosMod
         internal RectTransform Arrow;
         internal Transform child;
         internal int objectCount = 0;
+        internal float heightOffset = 0f;
         internal bool isClosed = false;
 
         void Start()
@@ -27,9 +28,19 @@ namespace ChaosMod
             isClosed = false;
             child.gameObject.SetActive(true);
 
+            float height = 0f;
+            Transform children = child.GetChild(1);
+            for (int i = 0; i < children.childCount; i ++)
+            {
+                var rect = (RectTransform)children.GetChild(i);
+                height += rect.sizeDelta.y;
+                height += 10f;
+            }
+
             // each option size is 25. has 10 distance
             var shit = (RectTransform)child;
-            shit.sizeDelta = new Vector2(shit.sizeDelta.x, 35f + (25f * objectCount) + (10f * objectCount));
+            // shit.sizeDelta = new Vector2(shit.sizeDelta.x, 35f + (25f * objectCount) + (10f * objectCount) + heightOffset);
+            shit.sizeDelta = new Vector2(shit.sizeDelta.x, 35f + height + heightOffset);
 
             // update self size, to update vertical layout.
             var fuck = (RectTransform)transform;
