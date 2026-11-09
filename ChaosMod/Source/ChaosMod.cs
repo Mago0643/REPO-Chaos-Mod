@@ -29,11 +29,11 @@ public sealed class ChaosMod: BaseUnityPlugin {
     internal static ChaosMod Instance { get; private set; } = null!;
     internal static bool IsDebug {
         get {
-            bool enable = true;
+            bool enable = false;
             return Instance.DevMode || enable;
         }
     }
-    internal static readonly bool DISABLE_TIMER = true;
+    internal static readonly bool DISABLE_TIMER = false;
     internal static float MaxEventTimer = 20f;
     /// <summary>
     /// This list contains enemy who is not despawned. (if despawns removes from the list automatically)
@@ -42,7 +42,7 @@ public sealed class ChaosMod: BaseUnityPlugin {
     internal new static ManualLogSource Logger => Instance._logger;
     private ManualLogSource _logger => base.Logger;
     internal Harmony? Harmony { get; set; }
-    internal bool DevMode = true; // change this true to experience the "real" debug mode.
+    internal bool DevMode = false; // change this true to experience the "real" debug mode.
 
     internal Canvas? UICanvas;
     internal RectTransform? barRect;
