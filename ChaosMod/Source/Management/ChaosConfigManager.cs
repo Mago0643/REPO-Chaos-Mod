@@ -132,15 +132,15 @@ public sealed class ChaosConfigManager
 
         switch (category) {
             case string s when s == categories[0]: { // General
-                
+                CreateCategoryGeneral();
                 break;
             }
             case string s when s == categories[1]: { // Events
-
+                CreateCategoryEvents();
                 break;
             }
             case string s when s == categories[2]: { // Languages
-
+                CreateCategoryLanguage();
                 break;
             }
             default: {
@@ -156,14 +156,30 @@ public sealed class ChaosConfigManager
             }, parent, new Vector2(page.rectTransform.localPosition.x + 200f, 18f));
 
             var exitButton = MenuAPI.CreateREPOButton("Discard and Close", () => {
-                if (hasChanges) MenuAPI.OpenPopup("Discard and Close", Color.red, "Are you sure that you want to discard changes?", () => {
-                    hasChanges = false;
-                    page.ClosePage(true);
-                });
-                else page.ClosePage(true);
+                if (hasChanges) {
+                    MenuAPI.OpenPopup("Discard and Close", Color.red, "Are you sure that you want to discard changes?", () => {
+                        hasChanges = false;
+                        page.ClosePage(true);
+                    });
+                } else page.ClosePage(true);
             }, parent, new Vector2(page.rectTransform.localPosition.x + 240f, 18f));
         });
         page.OpenPage(true);
         lastSelectedCategory = category;
+    }
+
+    static void CreateCategoryGeneral()
+    {
+        
+    }
+
+    static void CreateCategoryEvents()
+    {
+        
+    }
+
+    static void CreateCategoryLanguage()
+    {
+        
     }
 }

@@ -23,7 +23,7 @@ using PInfo = Lego.ChaosMod.Backend.PluginInfo;
 
 namespace Lego.ChaosMod;
 [BepInPlugin(PInfo.GUID, PInfo.Name, PInfo.Version)]
-[BepInDependency("REPOModding.MenuLib", BepInDependency.DependencyFlags.HardDependency)]
+[BepInDependency("nickklmao.menulib", BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency("REPOLib", BepInDependency.DependencyFlags.HardDependency)]
 public sealed class ChaosMod: BaseUnityPlugin {
     internal static ChaosMod Instance { get; private set; } = null!;
@@ -568,7 +568,8 @@ public sealed class ChaosMod: BaseUnityPlugin {
     }
 
     internal GameObject? carObject;
-    internal CrazyCarAIScript? car;
+    // goodbye..
+    // internal CrazyCarAIScript? car;
 
     internal AdManager? adViewer;
     internal GameObject? adObject;

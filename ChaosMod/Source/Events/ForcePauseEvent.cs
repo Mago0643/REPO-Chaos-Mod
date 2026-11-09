@@ -1,7 +1,7 @@
 using Lego.ChaosMod.Backend;
 
 namespace Lego.ChaosMod.Events;
-public class ForcePauseEvent: ChaosEvent // yea this is unused
+public class ForcePauseEvent: ChaosEvent // why this does not work??
 {
     public ForcePauseEvent(): base("evt_force_pause", "evt_force_pause_desc")
     {
@@ -11,6 +11,6 @@ public class ForcePauseEvent: ChaosEvent // yea this is unused
     public override void Start()
     {
         base.Start();
-        MenuPageEsc.instance?.menuPage.PageStateSet(MenuPage.PageState.Active);
+        MenuPageEsc.instance?.menuPage.PageStateSet(MenuPage.PageState.Opening);
     }
 }

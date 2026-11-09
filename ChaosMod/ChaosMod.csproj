@@ -38,12 +38,28 @@
     <!--<PackageReference Include="R.E.P.O.GameLibs.Steam" Version="*-*" PrivateAssets="all" Publicize="true" />-->
     <PackageReference Include="REPOModding-MenuLib" Version="2.*" />
 
-    <PackageReference Include="Krafs.Publicizer" Version="2.*" PrivateAssets="all" />
-    <Reference Include="Assembly-CSharp" HintPath="${GameDirectory}/REPO_Data/Managed/Assembly-CSharp.dll" Publicize="true" />
+    <!--<PackageReference Include="Krafs.Publicizer" Version="2.*" PrivateAssets="all" />-->
     
     <PackageReference Include="BepInEx.Core" Version="5.*" ExcludeAssets="runtime" />
     <PackageReference Include="UnityEngine.Modules" Version="6000.3.17" IncludeAssets="compile" PrivateAssets="all" />
     <PackageReference Include="Zehs.REPOLib" Version="*" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>${GameDirectory}/REPO_Data/Managed/Assembly-CSharp.dll</HintPath>
+      <Publicize>true</Publicize>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Photon3Unity3D">
+      <HintPath>${GameDirectory}/REPO_Data/Managed/Photon3Unity3D.dll</HintPath>
+      <Publicize>true</Publicize>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="PhotonRealtime">
+      <HintPath>${GameDirectory}/REPO_Data/Managed/PhotonRealtime.dll</HintPath>
+      <Publicize>true</Publicize>
+      <Private>false</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <None Update="assets">

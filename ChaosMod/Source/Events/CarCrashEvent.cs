@@ -22,18 +22,15 @@ public class CarCrash: ChaosEvent // this is unused, because car was showing err
     {
         base.Start();
 
-        ChaosMod.Instance.car!.transform.position = Vector3.zero;
+        /*ChaosMod.Instance.car!.transform.position = Vector3.zero;
         ChaosMod.Instance.car.transform.rotation = Quaternion.identity;
-        ChaosMod.Instance.car.Spawn();
-
-        ChaosEventManager.Excludes.Add(Instance);
+        ChaosMod.Instance.car.Spawn();*/
     }
 
     public override void OnFinished()
     {
         base.OnFinished();
 
-        ChaosMod.Instance.car!.Despawn();
-        ChaosEventManager.Excludes.Remove(Instance);
+        // ChaosMod.Instance.car!.Despawn();
     }
 }
