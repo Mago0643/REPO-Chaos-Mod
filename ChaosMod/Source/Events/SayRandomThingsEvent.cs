@@ -1,5 +1,6 @@
 using Lego.ChaosMod.Backend;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 namespace Lego.ChaosMod.Events;
@@ -54,31 +55,17 @@ public class SayRandomThingsEvent: ChaosEvent {
     List<string> ConvertStringShitWhatever(string glue) {
         // ex. glue = "\"string 1\", \"string 2\",\"string 3\""
 
-        List<string> strings = new();
-        if (glue.Trim() == "") return strings;
+        if (string.IsNullOrEmpty(glue)) return [];
 
-        string[] cock = glue.Split(","); // { "\"string 1\"", " \"string 2\"", "\"string 3\"" }
-        for (int i = 0; i < cock.Length; i++) {
-            string str = cock[i];
+        List<string> strings = [];
 
-            int strStartIndex = str.IndexOf("\"");
-            if (strStartIndex == -1) {
-                // if did not found ", find the '.
-                strStartIndex = str.IndexOf("\'");
-                if (strStartIndex == -1) {
-                    Logging.Error($"Format Error: String should start with \" or \'. (at position {i})");
-                    break;
-                }
-            }
-
-            int strEndIndex = str.IndexOf(str[strStartIndex], strStartIndex + 1);
-            if (strEndIndex == -1) {
-                Logging.Error($"Format Error: String must be end with {str[strStartIndex]}. (at position {i})");
-                break;
-            }
-
-            strings.Add(str.Substring(strStartIndex + 1, strEndIndex - strStartIndex - 1)); // string 1
+        string pattern = @"(?>(?:""(?<match>(?:[^""]|"""")*)""|'(?<match>(?:[^']|'')*)'))";
+        foreach (Match match in Regex.Matches(glue, pattern))
+        {
+            if (match.Success)
+                strings.Add(match.Groups["match"].Value);
         }
+        
         return strings;
     }
 

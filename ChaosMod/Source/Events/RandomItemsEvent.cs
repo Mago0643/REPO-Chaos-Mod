@@ -1,4 +1,5 @@
 using Lego.ChaosMod.Backend;
+using Photon.Pun;
 using UnityEngine;
 
 namespace Lego.ChaosMod.Events;
@@ -36,7 +37,11 @@ public class RandomItemsEvent: ChaosEvent
         foreach (PlayerAvatar semibot in SemiFunc.PlayerGetAll())
         {
             string itemName = itemPrefabName + items[Random.Range(0,items.Length)];
-            GameObject item = Object.Instantiate(Resources.Load<GameObject>(itemName), semibot.transform.position + new Vector3(0f, 2f, 0f), Quaternion.identity);
+            GameObject item;
+            if (GameManager.Multiplayer())
+                item = PhotonNetwork.Instantiate(itemName, semibot.transform.position + Vector3.up * 2f, Quaternion.identity);
+            else
+                item = Object.Instantiate(Resources.Load<GameObject>(itemName), semibot.transform.position + new Vector3(0f, 2f, 0f), Quaternion.identity);
 
             // do i need to save them forever? or not.
             // adding option later to turn off because think about when this event happens rapidly

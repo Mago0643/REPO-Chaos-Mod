@@ -56,7 +56,7 @@ internal static class DevCommands
                     ChaosController.instance.SendEventRPC(evtIdx);
             }
         } else {
-            DebugConsoleUI.instance?.SetResponseText("Failed to revive players: Could not find ReviveAllPlayers modifier.", Color.red);
+            DebugConsoleUI.instance?.SetResponseText($"Failed to run chaos event: Could not find {keyName}.", Color.red);
             DebugCommandHandler.instance?.CommandFailedEffect();
             return;
         }

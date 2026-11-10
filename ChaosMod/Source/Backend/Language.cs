@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 
 namespace Lego.ChaosMod.Backend;
-public class Language
-{
+public sealed class Language {
     public static Dictionary<string, string> _table = new Dictionary<string, string>();
     public static void Load(string langCode)
     {
@@ -21,11 +20,6 @@ public class Language
             ?? new Dictionary<string, string>();
     }
 
-    // i need to change this logic
-    // maybe it would look like GetText(string key, string noneFound = null)
-    // if it did not found the key on the dictionary, return "noneFound" by default.
-    public static string GetText(string key)
-    {
-        return _table.TryGetValue(key, out var value) ? value : key;
-    }
+    public static string GetText(string key, string defaultValue = null!)
+        => _table.TryGetValue(key, out var value) ? value : (string.IsNullOrEmpty(defaultValue) ? key : defaultValue);
 }

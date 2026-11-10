@@ -2,7 +2,7 @@
 using UnityEngine;
 
 namespace Lego.ChaosMod.Backend;
-public struct EventOptions
+public class EventOptions
 {
     /// <summary>
     /// The probability that the event will occur. (0 ~ 1 range)

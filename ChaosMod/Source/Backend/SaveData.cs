@@ -50,12 +50,12 @@ public sealed class SaveData
 
     public void Set(string key, DataValue value) => data[key] = value.Value;
 
-    public T Get<T>(string key) {
+    public T Get<T>(string key, T defaultValue = default!) {
         if (data.TryGetValue(key, out var v))
             return (T)v;
         else {
             Logging.Error($"Did not found data key for \"{key}\"");
-            return default!;
+            return defaultValue;
         }
     }
     public List<object> GetAllValues() => data.Values.ToList();

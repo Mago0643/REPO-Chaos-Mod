@@ -29,11 +29,12 @@ public sealed class ChaosMod: BaseUnityPlugin {
     internal static ChaosMod Instance { get; private set; } = null!;
     internal static bool IsDebug {
         get {
-            bool enable = false;
+            // change this true to experience the "real" debug mode.
+            bool enable = true;
             return Instance.DevMode || enable;
         }
     }
-    internal static readonly bool DISABLE_TIMER = false;
+    internal static bool DISABLE_TIMER = false;
     internal static float MaxEventTimer = 20f;
     /// <summary>
     /// This list contains enemy who is not despawned. (if despawns removes from the list automatically)
@@ -42,7 +43,7 @@ public sealed class ChaosMod: BaseUnityPlugin {
     internal new static ManualLogSource Logger => Instance._logger;
     private ManualLogSource _logger => base.Logger;
     internal Harmony? Harmony { get; set; }
-    internal bool DevMode = false; // change this true to experience the "real" debug mode.
+    internal bool DevMode = false;
 
     internal Canvas? UICanvas;
     internal RectTransform? barRect;
@@ -216,14 +217,13 @@ public sealed class ChaosMod: BaseUnityPlugin {
         options = settings.AddComponent<OptionsMenuController>();
         FakeCursor = settings.transform.Find("Mouse Cursor").GetComponent<RawImage>();
 
-        // i need color this stuff damn....
         var fuck = GameObject.Find("Cursor").transform.GetChild(0).GetComponent<RawImage>();
-        FakeCursor.texture = fuck.texture;
+        /*FakeCursor.texture = fuck.texture;
         FakeCursor.material = fuck.material;
-        FakeCursor.gameObject.SetActive(false);
         FakeCursor.rectTransform.sizeDelta = new Vector2(128f/2f, 111f/2f);
         FakeCursor.raycastTarget = false;
-        FakeCursor.rectTransform.pivot = new Vector2(0f, 1f);
+        FakeCursor.rectTransform.pivot = new Vector2(0f, 1f);*/
+        FakeCursor.gameObject.SetActive(false);
 
         StartCoroutine(MakeOptions());
 
@@ -398,6 +398,8 @@ public sealed class ChaosMod: BaseUnityPlugin {
         Logging.Log("Settings are created!");
     }
 
+    internal static SaveData GetPreferences() => Instance?.preferences;
+
     public const string CONFIG_HEADER = "CHAOS_MOD_CONFIG";
     public const bool CONFIG_DEBUG = false;
     public string CONFIG_PATH { get; private set; } = "";
@@ -428,94 +430,10 @@ public sealed class ChaosMod: BaseUnityPlugin {
                     string evt_name = lmao[1];
                     string evt_var = lmao[2];
 
-                    // use reflection instead of doing hardcode
+                    // use reflection instead of doing hardcoding
                     
                 }
             }
-
-            /*using var fs = new FileStream(path, FileMode.Open);
-            using var br = new BinaryReader(fs);
-
-            try
-            {
-                if (br.ReadString() != CONFIG_HEADER)
-                {
-                    Logging.Error(Language.GetText("exception_config_invaild_header"));
-                    return;
-                }
-            }
-            catch (Exception e)
-            {
-                Logging.Error(e.GetBaseException() + ": " + e.Message + "\n" + e.StackTrace);
-                if (e.GetBaseException() is EndOfStreamException)
-                {
-                    Logging.Log(Language.GetText("exception_endofstream_config_1"));
-                    Logging.Log(Language.GetText("exception_endofstream_config_2"));
-                }
-                return;
-            }
-
-            int version = br.ReadInt32();
-            if (version > CONFIG_VERSION) { // if file version is higher, we cannot parse it.
-                Logging.Log(Language.GetText("exception_config_version_match"));
-                return;
-            }
-
-            /*if (version == 1) {
-                Logging.Log("VERSION 1 SAVE FILE DETECTED!!! I REPEAT!!!! VERSION ONE SAVE FILE DETECTED!!!!!");
-
-                GameObject obj = Instantiate(assets.LoadAsset<GameObject>("Save File Warn"), UICanvas.transform, false);
-                obj.AddComponent<SaveHandler>();
-
-                FakeCursor.gameObject.SetActive(true);
-
-                return;
-            }* /
-
-            int count = br.ReadInt32();
-            if (CONFIG_DEBUG) Logging.Log("(count) br.ReadInt32() => " + count);
-            for (int i = 0; i < count; i++)
-            {
-                string key = br.ReadString();
-                string type = br.ReadString();
-                #pragma warning disable CS8600
-                object value = null;
-                #pragma warning restore CS8600
-                switch (type)
-                {
-                    case "bool":
-                        {
-                            value = br.ReadBoolean();
-                            options.SetValue(key, (bool)value, false);
-                            break;
-                        }
-                    case "float":
-                        {
-                            value = br.ReadSingle();
-                            options.SetValue(key, (float)value, false);
-                            break;
-                        }
-                    case "range":
-                        {
-                            float[] range = [br.ReadSingle(), br.ReadSingle()];
-                            value = range;
-                            options.SetValue(key, range, false);
-                            break;
-                        }
-                    case "color":
-                        {
-                            Color col = new Color(
-                                br.ReadSingle(),
-                                br.ReadSingle(),
-                                br.ReadSingle()
-                            );
-                            value = col;
-                            options.SetValue(key, col, false);
-                            break;
-                        }
-                }
-                if (CONFIG_DEBUG) Logging.Log($"Config: Got {key}, Type is {type}, Value is {value}");
-            }*/
         } catch (Exception e) {
             Logging.Error($"An Error has occured while parsing config file!\n{e.Message}\n{e.StackTrace}");
             return;
@@ -527,37 +445,6 @@ public sealed class ChaosMod: BaseUnityPlugin {
     {
         Logging.Log("Trying to save settings...");
         preferences.Save(CONFIG_PATH);
-        /*using var fs = new FileStream(Util.GetPluginDirectory("settings.bytes"), FileMode.Create);
-        using var bw = new BinaryWriter(fs);
-
-        bw.Write(CONFIG_HEADER);
-        bw.Write(CONFIG_VERSION);
-        bw.Write(options.datas.Count);
-
-        foreach (var item in options.datas)
-        {
-            bw.Write(item.Key);
-
-            // FUCKKK
-            if (item.Value is bool bChecked) {
-                bw.Write("bool");
-                bw.Write(bChecked);
-            } else if (item.Value is float fValue) {
-                bw.Write("float");
-                bw.Write(fValue);
-            } else if (item.Value is float[] arr) {
-                bw.Write("range");
-                bw.Write(arr[0]);
-                bw.Write(arr[1]);
-            } else if (item.Value is Color col) {
-                bw.Write("color");
-                bw.Write(col.r);
-                bw.Write(col.g);
-                bw.Write(col.b);
-            }
-        }
-
-        bw.Flush();*/
         Logging.Log("Done!");
     }
 
@@ -759,8 +646,9 @@ public sealed class ChaosMod: BaseUnityPlugin {
     bool didReset = false;
     private void Update()
     {
-        if (timeBar!.activeSelf != Generated)
-            timeBar.SetActive(Generated);
+        bool shouldOn = Generated && !DISABLE_TIMER;
+        if (timeBar!.activeSelf != shouldOn)
+            timeBar.SetActive(shouldOn);
 
         if (Input.GetKeyDown(ConfigOptionsMenu!.Value))
         {
